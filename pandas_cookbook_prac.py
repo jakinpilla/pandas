@@ -8,6 +8,7 @@ This is a temporary script file.
 from os import getcwd, chdir
 wd = getcwd()
 import pandas as pd
+import numpy as np
 # chdir("E:/pandas")
 chdir(wd)
 getcwd()
@@ -107,7 +108,7 @@ columns = movie.columns
 index_list =index.tolist()
 column_list = columns.tolist()
 
-# 리스트 할당을 통한 열의 레이블 변경
+# change columns labels by assigning list index
 index_list[0] = 'Ravata'
 index_list[2] = 'Ertceps'
 column_list[1] = 'Director Name'
@@ -158,24 +159,316 @@ movie["pct_actor_cast_like"]  = \
 (movie["pct_actor_cast_like"].min(), movie["pct_actor_cast_like"].max())
 movie.set_index("movie_title")["pct_actor_cast_like"].head()
 
+## insert()
+
+profit_index = movie.columns.get_loc('gross') + 1
+profit_index
+movie.insert(loc = profit_index, 
+             column = 'profit',
+             value = movie['gross'] - movie['budget'])
+
+## del
+
+movie["actor_director_facebook_likes"] =\
+(movie["actor_1_facebook_likes"] +
+ movie["actor_2_facebook_likes"] +
+ movie["actor_3_facebook_likes"] +
+ movie["director_facebook_likes"])
+
+movie["actor_director_facebook_likes"].isnull().sum()
+movie["actor_director_facebook_likes"] = \
+movie["actor_director_facebook_likes"].fillna(0)
+del movie['actor_director_facebook_likes']
+
+## selecting multiful columns
+
+movie_actor_director = movie[['actor_1_name', 'actor_2_name', 
+                              'actor_3_name', 'director_name']]
+movie_actor_director.head()
+movie[['director_name']].head()
+cols = ['actor_1_name', 'actor_2_name', 'actor_3_name', 'director_name']
+movie_actor_director = movie[cols]
+
+tuple1 = 1, 2, 3, 'a', 'b'
+tuple2 = (1, 2, 3, 'a', 'b')
+tuple1 == tuple2
+
+## selecting multiful columns with methods
+
+movie = pd.read_csv("./data/movie.csv", index_col = "movie_title")
+movie.get_dtype_counts()
+movie.select_dtypes(include = ['int64']).head()
+movie.select_dtypes(include = ['number']).head()
+movie.filter(like='facebook').head()
+movie.filter(regex = '\d').head()
+movie.filter(like='facebook').columns
+movie.filter(regex = '\d').columns
+movie.filter(items = ['actor_1_name', 'asdf']).head() # not raising KeyError
+
+## arranging columns
+
+## seperate discrete and continuous columns
+## grouping commnon columns
+## arrange the most important column first within grouped columns
+
+movie = pd.read_csv("./data/movie.csv")
+movie.head()
+movie.columns
+movie.info()
+
+## seperate discrete columns
+movie.select_dtypes(include = ['object']).columns
+movie['content_rating'][:5]
+disc_core = ['movie_title', 'title_year', 'content_rating', 'genres']
+
+disc_people = ['director_name', 'actor_1_name', 'actor_2_name', 
+               'actor_3_name']
+
+disc_other = ['color', 'country', 'language', 'plot_keywords', 'movie_imdb_link']
+
+cont_fb = ['director_facebook_likes', 'actor_1_facebook_likes', 
+           'actor_2_facebook_likes', 'actor_3_facebook_likes', 
+           'cast_total_facebook_likes', 'movie_facebook_likes']
+
+cont_finance = ['budget', 'gross']
+
+cont_num_reviews = ['num_voted_users', 'num_user_for_reviews', 
+                    'num_critic_for_reviews']
+
+cont_other = ['imdb_score', 'duration', 'aspect_ratio', 'facenumber_in_poster']
+
+new_col_order = disc_core + disc_people + \
+disc_other + cont_fb + cont_finance + cont_num_reviews + cont_other
+set(movie.columns) == set(new_col_order)
+
+movie2 = movie[new_col_order]
+movie2.head()
+movie2.columns
+
+## operation for all dataframe
+
+movie = pd.read_csv("./data/movie.csv")
+movie.shape
+movie.size
+movie.ndim
+len(movie)
+movie.count()
+movie.describe()
+movie.describe(percentiles = [.01, .3, .99])
+movie.min(skipna = False)
+movie.min()
+movie.isnull().sum()
+movie.isnull().sum().sum()
+movie.isnull().any()
+movie.isnull().any().any()
+movie.isnull().get_dtype_counts()
+movie.select_dtypes(['object']).fillna('').min()
+movie.select_dtypes(['object'])\
+.fillna('')\
+.min()
+
+college = pd.read_csv("./data/college.csv")
+# college + 5
+collge = pd.read_csv("./data/college.csv", index_col = "INSTNM")
+college_ugds_ = college.filter(like = "UGDS_")
+college_ugds_.head()
+college_ugds_ + 0.00501
+(college_ugds_ + 0.00501) // 0.01
+college_ugds_op_round = (college_ugds_ + 0.00501) // 0.01 / 100
+college_ugds_op_round.head()
+college_ugds_round = (college_ugds_ + .00001).round(2)
+college_ugds_op_round.equals(college_ugds_round)
+college_ugds_op_round_methods = college_ugds_.add(.00501)\
+.floordiv(.01)\
+.div(100)
+
+college_ugds_op_round_methods.equals(college_ugds_op_round)
+
+# np.nan == np. ## return False
+None == None
+
+college = pd.read_csv("./data/college.csv", index_col = "INSTNM")
+college_ugds_ = college.filter(like = "UGDS_")
+college_ugds_ == 0.0019
+college_self_compare = college_ugds_ == college_ugds_
+college_self_compare.head()
+college_self_compare.all() ## return False because nan is not considered as identical each other
+college_ugds_.isnull().sum()
+college_ugds_.equals(college_ugds_)
+
+college_ugds_.eq(.0019) # college_ugds_ == .0019
+
+from pandas.testing import assert_frame_equal
+assert_frame_equal(college_ugds_, college_ugds_) # there is no return why?
+
+## dataframe axis
+
+college = pd.read_csv("./data/college.csv", index_col = "INSTNM")
+college_ugds_ = college.filter(like = 'UGDS_')
+college_ugds_.head()
+college_ugds_.count()
+college_ugds_.count(axis = 'columns')
+college_ugds_.sum(axis = 'columns').head()
+college_ugds_.median(axis = 'index')
+college_ugds_cumsum = college_ugds_.cumsum(axis = 1)
+college_ugds_cumsum.head()
+
+## diversity index
+
+pd.read_csv('./data/college_diversity.csv', index_col = 'School')
+
+college = pd.read_csv('./data/college.csv', index_col = 'INSTNM')
+college_ugds_ = college.filter(like = 'UGDS_')
+college_ugds_.isnull()\
+.sum(axis = 1)\
+.sort_values(ascending=False)\
+.head()
+
+college_ugds_ = college_ugds_.dropna(how = 'all')
+college_ugds_.isnull().sum()
+college_ugds_.ge(.15)
+
+diversity_metric = college_ugds_.ge(.15).sum(axis = 'columns')
+diversity_metric
+diversity_metric.value_counts()
+diversity_metric.sort_values(ascending = False).head()
 
 
+college_ugds_.loc[['Regency Beauty Institute-Austin', 
+                   'Central Texas Beauty College-Temple']]
+
+us_news_top = ['Rutgers University-Newark',
+               'Andrews University',
+               'Stanford University',
+               'University of Houston',
+               'University of Nevada-Las Vegas']
 
 
+diversity_metric.loc[us_news_top]
+college_ugds_.max(axis = 1).sort_values(ascending=False).head(10)
+(college_ugds_ > .01).all(axis = 1).any()
+
+## EDA routine
+college = pd.read_csv('./data/college.csv')
+college.head()
+college.shape
+college.info()
+college.describe().T
+college.describe(include = [np.number]).T
+college.describe(include = [np.object, pd.Categorical]).T
+college.describe(include = [np.number] ,
+                 percentiles = [.01, .05, .10, .25, .5,
+                                .75, .9, .95, .99]).T
+
+## data dictionary
+data_dic = pd.read_csv('./data/college_data_dictionary.csv')
+
+## memory saving
+college = pd.read_csv('./data/college.csv')
+different_cols = ['RELAFFIL', 'SATMTMID', 'CURROPER', 'INSTNM', 'STABBR']
+col2 = college.loc[:, different_cols]
+col2.info()
+col2.head()
+col2.dtypes
+original_mem = col2.memory_usage(deep = True)
+original_mem
+col2['RELAFFIL'] = col2['RELAFFIL'].astype(np.int8)
+col2.dtypes
+
+college[different_cols].memory_usage(deep=True)
+col2.select_dtypes(include = ['object']).nunique()
+col2['STABBR'] = col2['STABBR'].astype('category')
+col2.dtypes
+new_mem = col2.memory_usage(deep = True)
+new_mem
+
+new_mem / original_mem
+
+college.loc[0, 'CURROPER'] = 10000000
+college.loc[0, 'INSTNM'] = college.loc[0, 'INSTNM'] + 'a'
+college[['CURROPER', 'INSTNM']].memory_usage(deep = True)
+college.describe(include = ['int8', 'float64']).T
+college.describe(include = [np.int64, np.float64]).T
+college.describe(include = ['int', 'float']).T
+college.describe(include = ['number']).T
 
 
+college['MENONLY'] = college['MENONLY'].astype('float16')
+college['RELAFFIL'] = college['RELAFFIL'].astype('int8')
+
+college.index = pd.Int64Index(college.index)
+college.index.memory_usage()
+
+movie = pd.read_csv('./data/movie.csv')
+movie2 = movie[['movie_title', 'imdb_score', 'budget']]
+movie2.head()
+movie2.nlargest(100, 'imdb_score').head()
+movie2.nlargest(100, 'imdb_score').nsmallest(5, 'budget')
+
+# select max one of certain group by arranging(drop_duplicates())
+movie = pd.read_csv('./data/movie.csv')
+movie2 = movie[['movie_title', 'title_year', 'imdb_score']]
+movie2.sort_values('title_year', ascending = False).head()
+movie3 = movie2.sort_values(['title_year', 'imdb_score'], ascending = False)
+movie3.head()
+movie_top_year = movie3.drop_duplicates(subset = 'title_year')
+movie_top_year
+movie4 = movie[['movie_title', 'title_year', 'content_rating', 'budget']]
+movie4.info()
+movie4.content_rating.unique()
+movie4_sorted = movie4.sort_values(['title_year', 'content_rating', 'budget'],
+                                   ascending = [False, False, True])
+movie4_sorted.drop_duplicates(subset = ['title_year', 'content_rating']).head()
+
+# duplicate nlargest with sort_value()
+movie = pd.read_csv('./data/movie.csv')
+movie2 = movie[['movie_title', 'imdb_score', 'budget']]
+movie_smallest_largest = movie2.nlargest(100, 'imdb_score')\
+.nsmallest(5, 'budget')
+movie_smallest_largest
+movie2.sort_values('imdb_score', ascending = False).head()
+movie2.sort_values('imdb_score', ascending = False).head(100)\
+.sort_values('budget').head()
+
+# pip install pandas_datareader
+# This is due to the fact that is_list_like has been moved from pandas.core.common 
+# to pandas.api.types in Pandas 0.23.0.
+
+import pandas as pd
+pd.core.common.is_list_like = pd.api.types.is_list_like
+
+from pandas_datareader import data, wb
+import fix_yahoo_finance as yf
+yf.pdr_override()
+import numpy as np
+import datetime
+
+#To get data:
+
+start = datetime.datetime(2017, 1, 1)
+end = datetime.datetime(2017, 12, 31)
+tsla = data.get_data_yahoo('tsla', start, end)
+tsla.head(8)
+
+tsla_close = tsla['Close']
+tsla_cummax = tsla_close.cummax()
+tsla_cummax.head()
+
+tsla_trailing_stop = tsla_cummax * .9
+tsla_trailing_stop.head(8)
+
+datetime.datetime.strptime('2017-6-1', "%Y-%m-%d")
+
+def set_trailing_loss(symbol, start_date, end_date, perc):
+    start_date = datetime.datetime.strptime(start_date, '%Y-%m-%d')
+    end_date = datetime.datetime.strptime(end_date, '%Y-%m-%d')
+    close = data.get_data_yahoo(symbol, start_date, end_date)['Close']
+    
+    return close.cummax() * perc
 
 
-
-
-
-
-
-
-
-
-
-
+msft_trailing_stop = set_trailing_loss('msft', '2017-6-1', '2018-6-1', .85)
+msft_trailing_stop.head()
 
 
 
