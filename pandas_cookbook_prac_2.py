@@ -66,6 +66,5 @@ def test_return_normality(stock_data):
 slb = pd.read_csv('./data/slb_stock.csv', index_col = 'Date', parse_dates = ['Date'])
 test_return_normality(slb)
 
-qs = 'DEPARTMENT in @dept'\
-"and GENDER == 'Female'"\
-"and 80000 <= BASE_SALARY <= 120000"
+qs = "DEPARTMENT in @dept and GENDER == 'Female' and 80000 <= BASE_SALARY <= 120000"
+
