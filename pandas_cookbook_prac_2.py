@@ -91,7 +91,7 @@ c2 = movie['imdb_score'] < 4
 criteria = c1 & c2
 movie_loc = movie.loc[criteria]
 movie_loc.head()
-ovie_loc.equals(movie[criteria])
+movie_loc.equals(movie[criteria])
 
 # we cannot use boolean series in iloc, we need to use boolean ndarray
 movie_iloc = movie.iloc[criteria.values]
@@ -123,8 +123,79 @@ columns.min(), columns.max(), columns.isnull().sum()
 columns + '_A'
 columns > 'G'
 
+c1 = columns[:4] ; c1
+c2 = columns[2:6] ; c2
+c1.union(c2)
+c1.symmetric_difference(c2)
 
+# cartesian product
+s1 = pd.Series(index=list('aaab'), data=np.arange(4))
+s1
+s2 = pd.Series(index=list('cababb'), data = np.arange(6))
+s2
+s1+s2
+s1 = pd.Series(index=list('aaabb'), data=np.arange(5))
+s2 = pd.Series(index=list('aaabb'), data=np.arange(5))
+s1+s2
+s1 = pd.Series(index=list('aaabb'), data=np.arange(5))
+s2 = pd.Series(index=list('bbaaa'), data=np.arange(5))
+s1+s2
 
+# explode index
+employee = pd.read_csv('./data/employee.csv', index_col='RACE')
+employee.head()
+salary1 = employee['BASE_SALARY']
+salary2 = employee['BASE_SALARY']
+salary1 is salary2
+salary1 = employee['BASE_SALARY'].copy()
+salary2 = employee['BASE_SALARY'].copy()
+salary1 is salary2
 
+salary1 = salary1.sort_index()
+salary1.head()
+salary2.head()
 
+salary_add = salary1 + salary2
+salary_add.head()
 
+salary_add1 = salary1 + salary1
+
+len(salary1), len(salary2), len(salary_add), len(salary_add1)
+
+index_vc = salary1.index.value_counts(dropna = False)
+index_vc.pow(2).sum()
+
+# fill_value()
+
+baseball_14 = pd.read_csv('./data/baseball14.csv', index_col ='playerID')
+baseball_15 = pd.read_csv('./data/baseball15.csv', index_col ='playerID')
+baseball_16 = pd.read_csv('./data/baseball16.csv', index_col ='playerID')
+
+baseball_14.head()
+baseball_14.index.difference(baseball_15.index)
+baseball_14.index.difference(baseball_16.index)
+
+hits_14 = baseball_14['H']
+hits_15 = baseball_15['H']
+hits_16 = baseball_16['H']
+hits_14.head()
+(hits_14 + hits_15).head() ## occur NaN
+hits_14.add(hits_15, fill_value=0).head()
+hits_total  = hits_14.add(hits_15, fill_value=0).add(hits_16, fill_value=0)
+hits_total.head()
+hits_total.hasnans
+
+# if all elements are 'nan', adding Series's result is also 'nan' even though fill_values() method is used.
+s = pd.Series(index=['a', 'b', 'c', 'd'],
+              data = [np.nan, 3, np.nan, 1])
+s
+s1 = pd.Series(index=['a', 'b', 'c'], data=[np.nan, 6, 10])
+s1
+s.add(s1, fill_value=5)
+
+df_14 = baseball_14[['G', 'AB', 'R', 'H']]
+df_14.head()
+df_15 = baseball_15[['AB', 'R', 'H', 'HR']]
+df_15.head()
+(df_14 + df_15).head(10).style.highlight_null('yellow') # how can I see this result in spyder IDE...
+df_14.add(df_15, fill_value=0).head(10).style.highlight_null('yellow')

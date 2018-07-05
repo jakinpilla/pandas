@@ -437,7 +437,6 @@ movie2.sort_values('imdb_score', ascending = False).head(100)\
 import pandas as pd
 pd.core.common.is_list_like = pd.api.types.is_list_like
 
-from pandas_datareader import data, wb
 import fix_yahoo_finance as yf
 yf.pdr_override()
 import numpy as np
@@ -469,7 +468,5 @@ def set_trailing_loss(symbol, start_date, end_date, perc):
 
 msft_trailing_stop = set_trailing_loss('msft', '2017-6-1', '2018-6-1', .85)
 msft_trailing_stop.head()
-
-
 
 
