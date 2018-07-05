@@ -199,3 +199,183 @@ df_15 = baseball_15[['AB', 'R', 'H', 'HR']]
 df_15.head()
 (df_14 + df_15).head(10).style.highlight_null('yellow') # how can I see this result in spyder IDE...
 df_14.add(df_15, fill_value=0).head(10).style.highlight_null('yellow')
+
+# extracting persons who recieve max salary in each department
+employee = pd.read_csv('./data/employee.csv')
+dept_sal =employee[['DEPARTMENT', 'BASE_SALARY']]
+dept_sal = dept_sal.sort_values(['DEPARTMENT', 'BASE_SALARY'], ascending=[True, False])
+max_dept_sal = dept_sal.drop_duplicates(subset = 'DEPARTMENT')
+len(max_dept_sal)
+max_dept_sal
+max_dept_sal.columns
+max_dept_sal = max_dept_sal.set_index('DEPARTMENT')
+max_dept_sal
+len(max_dept_sal)
+employee = employee.set_index('DEPARTMENT')
+len(employee)
+employee.columns
+employee['MAX_DEPT_SALARY'] = max_dept_sal['BASE_SALARY'] # we can use this code because employee row index is exactly matched with max_deptsal index one by one
+employee.head()
+len(employee)
+employee.query('BASE_SALARY > MAX_DEPT_SALARY')
+
+np.random.seed(1234)
+random_salary = dept_sal.sample(n=10).set_index('DEPARTMENT')
+random_salary
+
+employee['MAX_SALARY2'] = max_dept_sal['BASE_SALARY'].head(3)
+employee
+max_dept_sal['BASE_SALARY'].head(3)
+employee.MAX_SALARY2.value_counts()
+employee.MAX_SALARY2.isnull().mean()
+college = pd.read_csv('./data/college.csv', index_col = 'INSTNM')
+college.dtypes
+college.MD_EARN_WNE_P10.iloc[0]
+college.GRAD_DEBT_MDN_SUPP.iloc[0]
+
+college.MD_EARN_WNE_P10.sort_values(ascending=False).head()
+cols = ['MD_EARN_WNE_P10', 'GRAD_DEBT_MDN_SUPP']
+for col in cols:
+    college[col] = pd.to_numeric(college[col], errors ='coerce')
+
+college.dtypes.loc[cols]
+college_n = college.select_dtypes(include=[np.number])
+college_n.head()
+criteria = college_n.nunique() == 2
+criteria
+binary_cols = college_n.columns[criteria].tolist()
+binary_cols
+college_n2 = college_n.drop(labels=binary_cols, axis = 'columns')
+college_n2.head()
+max_cols = college_n2.idxmax()
+max_cols
+unique_max_cols = max_cols.unique()
+unique_max_cols[:5]
+college_n2.loc[unique_max_cols].style.highlight_max()
+college = pd.read_csv('./data/college.csv', index_col='INSTNM')
+college_ugds = college.filter(like='UGDS_').head()
+college_ugds.style.highlight_max(axis='columns')
+
+
+college = pd.read_csv('./data/college.csv', index_col = 'INSTNM')
+cols = ['MD_EARN_WNE_P10', 'GRAD_DEBT_MDN_SUPP']
+for col in cols:
+    college[col] = pd.to_numeric(college[col], errors ='coerce')
+college_n = college.select_dtypes(include=[np.number])
+criteria = college_n.nunique() == 2
+binary_cols = college_n.columns[criteria].tolist()
+college_n = college_n.drop(labels=binary_cols, axis = 'columns')
+college_n.max().head()
+college_n.eq(college_n.max()).head()
+has_row_max = college_n.eq(college_n.max()).any(axis='columns')
+has_row_max.head()
+college_n.shape
+has_row_max.sum()
+college_n.eq(college_n.max()).cumsum().cumsum()
+has_row_max2 = college_n.eq(college_n.max()).cumsum().cumsum().eq(1).any(axis='columns')
+has_row_max2.head()
+has_row_max2.sum()
+idxmax_cols= has_row_max2[has_row_max2].index
+idxmax_cols
+set(college_n.idxmax().unique()) == set(idxmax_cols)
+
+#m most frequent max values
+college_ugds = college.filter(like='UGDS_')
+highest_percentage_race = college_ugds.idxmax(axis='columns')
+highest_percentage_race.value_counts(normalize =True)
+college_black = college_ugds[highest_percentage_race == 'UGDS_BLACK']
+college_black = college_black.drop('UGDS_BLACK', axis='columns')
+college_black.idxmax(axis='columns').value_counts(normalize=True)
+
+# group, filter, transform for aggregation
+# split-apply-combine
+flights = pd.read_csv('./data/flights.csv')
+flights.head()
+flights.groupby('AIRLINE').agg({'ARR_DELAY' : 'mean'}).head()
+flights.groupby('AIRLINE')['ARR_DELAY'].agg('mean').head()
+flights.groupby('AIRLINE')['ARR_DELAY'].agg(np.mean).head()
+flights.groupby('AIRLINE')['ARR_DELAY'].mean().head()
+grouped = flights.groupby('AIRLINE')
+type(grouped)
+
+flights.groupby(['AIRLINE', 'WEEKDAY'])['CANCELLED'].agg('sum').head(20)
+flights.groupby(['AIRLINE', 'WEEKDAY'])['CANCELLED', 'DIVERTED'].agg('sum').head(20)
+
+group_cols = ['ORG_AIR', 'DEST_AIR']
+agg_dict = {'CANCELLED' : ['sum', 'mean', 'size'], 
+            'AIR_TIME' : ['mean', 'var']}
+flights.groupby(group_cols).agg(agg_dict).head()
+
+# remove multi-index after groupby()
+flights = pd.read_csv('./data/flights.csv')
+airline_info = flights.groupby(['AIRLINE', 'WEEKDAY'])\
+.agg({'DIST' : ['sum', 'mean'], 'ARR_DELAY' : ['min', 'max']}).astype(int)
+
+airline_info.head(7)
+level0 = airline_info.columns.get_level_values(0)
+level0
+level1 = airline_info.columns.get_level_values(1)
+level1
+airline_info.columns = level0 + '_' + level1
+airline_info.head()
+airline_info.reset_index().head() # row multiindex can be single index with reset_index() method easily
+flights.groupby(['AIRLINE'], as_index=False)['DIST'].agg('mean').round(0)
+college = pd.read_csv('./data/college.csv')
+college.groupby('STABBR')['UGDS'].agg(['mean', 'std']).round(0).head()
+
+def max_deviation(s):
+    std_score = (s - s.mean()) / s.std()
+    return std_score.abs().max()
+
+college.groupby('STABBR')['UGDS'].agg(max_deviation).round(1).head()
+college.groupby('STABBR')['UGDS', 'SATVRMID', 'SATMTMID'].agg(max_deviation).round(1).head()
+college.groupby(['STABBR', 'RELAFFIL'])['UGDS', 'SATVRMID', 'SATMTMID'].agg([max_deviation, 'mean', 'std'])\
+.round(1).head()
+
+max_deviation.__name__
+max_deviation.__name__ = 'Max Deviation'
+college.groupby(['STABBR', 'RELAFFIL'])\
+['UGDS', 'SATVRMID', 'SATMTMID'].agg([max_deviation, 'mean', 'std']).round(1).head()
+
+# *arg, **kwargs / arbitrary argument list
+
+college = pd.read_csv('./data/college.csv')
+grouped = college.groupby(['STABBR', 'RELAFFIL'])
+import inspect
+inspect.signature(grouped.agg)
+
+def pct_between_1_3k(s):
+    return s.between(1000, 3000).mean()
+
+college.groupby(['STABBR', 'RELAFFIL'])['UGDS'].agg(pct_between_1_3k).head(9)
+
+def pct_between(s, low, high):
+    return s.between(low, high).mean()
+
+college.groupby(['STABBR', 'RELAFFIL'])['UGDS'].agg(pct_between, 1000, 10000).head(9)
+college.groupby(['STABBR', 'RELAFFIL'])['UGDS'].agg(pct_between, high=10000, low=1000).head(9)
+college.groupby(['STABBR', 'RELAFFIL'])['UGDS'].agg(pct_between, 1000, high=10000).head(9)
+
+# *arg --> tuples / **kwargs --> dictionary
+
+def make_agg_func(func, name, *args, **kwargs):
+    def wrapper(x):
+        return func(x, *args, **kwargs)
+    wrapper.__name__ = name
+    return wrapper
+
+my_agg1 = make_agg_func(pct_between, 'pct_1_3k', low=1000, high=3000)
+my_agg2 = make_agg_func(pct_between, 'pct_10_30k', 10000, 30000)
+college.groupby(['STABBR', 'RELAFFIL'])['UGDS'].agg(['mean', my_agg1, my_agg2]).head()
+
+# groupby() objects
+college = pd.read_csv('./data/college.csv')
+grouped = college.groupby(['STABBR', 'RELAFFIL'])
+type(grouped)
+print([attr for attr in dir(grouped) if not attr.startswith('_')])
+grouped.ngroups
+groups = list(grouped.groups.keys())
+groups[:5]
+grouped.get_group(('FL', 1)).head()
+
+
