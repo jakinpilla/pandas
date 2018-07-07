@@ -1,0 +1,289 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Sat Jul  7 08:08:56 2018
+
+@author: Daniel
+"""
+
+from os import getcwd, chdir
+getcwd()
+chdir('C:/Users/Daniel/pandas')
+import numpy as np
+import pandas as pd
+
+weight_loss = pd.read_csv('./data/weight_loss.csv')
+weight_loss
+weight_loss.query('Month == "Jan"')
+
+def find_perc_loss(s):
+    return (s - s.iloc[0]) / s.iloc[0]
+
+bob_jan = weight_loss.query('Name == "Bob" and Month == "Jan"')
+find_perc_loss(bob_jan['Weight'])
+weight_loss.groupby(['Name', 'Month'])['Weight']
+pcnt_loss = weight_loss.groupby(['Name', 'Month'])['Weight'].transform(find_perc_loss)
+pcnt_loss.head(8)
+pcnt_loss
+weight_loss['Perc Weight Loss'] = pcnt_loss.round(3)
+weight_loss.query('Name=="Bob" and Month in ["Jan", "Feb"]')
+week4 = weight_loss.query('Week == "Week 4"')
+week4
+winner = week4.pivot(index='Month', columns='Name', values='Perc Weight Loss')
+winner
+winner["Winner"] = np.where(winner['Amy'] < winner['Bob'], 'Amy', 'Bob')
+winner
+winner.Winner.value_counts()
+#   Name Month    Week  Weight  Perc Weight Loss
+#0   Bob   Jan  Week 1     291             0.000
+#2   Bob   Jan  Week 2     288            -0.010
+#4   Bob   Jan  Week 3     283            -0.027
+#6   Bob   Jan  Week 4     283            -0.027
+#8   Bob   Feb  Week 1     283             0.000 # why this value is 0.0 ??
+#10  Bob   Feb  Week 2     275            -0.028
+#12  Bob   Feb  Week 3     268            -0.053
+#14  Bob   Feb  Week 4     268            -0.053
+
+(283-275)/283
+(283-268)/283
+
+
+week4a = week4.copy()
+month_chron = week4a['Month'].unique() # or use drop_duplicates
+month_chron
+week4a['Month'] = pd.Categorical(week4a['Month'], categories=month_chron,
+      ordered=True)
+week4a.pivot(index='Month', columns='Name', values='Perc Weight Loss')
+
+# SAT score weighted average per state with apply()
+# groupby --> agg, filter, transform, apply
+college = pd.read_csv('./data/college.csv')
+subset = ['UGDS', 'SATMTMID', 'SATVRMID']
+college2 = college.dropna(subset=subset)
+college.shape
+college2.shape
+
+def weighted_math_average(df):
+    weighted_math = df['UGDS'] * df['SATMTMID']
+    return int(weighted_math.sum() / df['UGDS'].sum())
+
+college2.groupby('STABBR').apply(weighted_math_average)
+
+from collections import OrderedDict
+
+def weighted_average(df):
+    data = OrderedDict()
+    weight_m = df['UGDS'] * df['SATMTMID']
+    weight_v = df['UGDS'] * df['SATVRMID']
+    wm_avg = weight_m.sum() / df['UGDS'].sum()
+    wv_avg = weight_v.sum() / df['UGDS'].sum()
+    
+    data['weighted_math_avg'] = wm_avg
+    data['weighted_verbal_avg'] = wv_avg
+    data['math_avg'] = df['SATMTMID'].mean()
+    data['verbal_avg'] = df['SATVRMID'].mean()
+    data['count'] = len(df)
+    return pd.Series(data, dtype='int')
+    
+college2.groupby('STABBR').apply(weighted_average).head(10)
+
+from collections import OrderedDict
+def weighted_average(df):
+    data = OrderedDict()
+    weight_m = df['UGDS'] * df['SATMTMID']
+    weight_v = df['UGDS'] * df['SATVRMID']
+
+    data['weighted_math_avg'] = weight_m.sum() / df['UGDS'].sum()
+    data['weighted_verbal_avg'] = weight_v.sum() / df['UGDS'].sum()
+    data['math_avg'] = df['SATMTMID'].mean()
+    data['verbal_avg'] = df['SATVRMID'].mean()
+    data['count'] = len(df)
+    return pd.Series(data, dtype='int')
+
+college2.groupby('STABBR').apply(weighted_average).head(10)
+
+from scipy.stats import gmean, hmean
+def calculate_means(df):
+    df_means = pd.DataFrame(index=['Arithmeric', 'Weighted', 'Geometric', 'Harmonic'])
+    cols = ['SATMTMID', 'SATVRMID']
+    for col in cols:
+        arithmetic = df[col].mean()
+        weighted = np.average(df[col], weights=df['UGDS']) # weights is argument
+        geometric = gmean(df[col])
+        harmonic = hmean(df[col])
+        df_means[col] = [arithmetic, weighted, geometric, harmonic]
+    
+    df_means['count'] = len(df)
+    return df_means.astype(int)
+
+college2.groupby('STABBR').apply(calculate_means).head(12)
+
+# group by contnuous variables :: cut()
+
+flights = pd.read_csv('./data/flights.csv')
+flights.head()
+flights.columns
+flights.info()
+
+bins = [-np.inf, 200, 500, 1000, 2000, np.inf]
+cuts = pd.cut(flights['DIST'], bins=bins)
+cuts.head()
+cuts.value_counts()
+flights.groupby(cuts)['AIRLINE'].value_counts(normalize=True).round(3).head(15)
+flights.groupby(cuts)['AIR_TIME'].quantile(q=[.25, .5, .75]).div(60).round(2)
+labels=['Under an Hour', '1 Hour', '1-2 Hours', '2-4 Hours', '4+ Hours']
+cut2 = pd.cut(flights['DIST'], bins=bins, labels = labels)
+flights.groupby(cuts)['AIRLINE'].value_counts(normalize=True).round(3)
+flights.groupby(cuts)['AIRLINE'].value_counts(normalize=True).round(3).unstack()
+
+flights = pd.read_csv('./data/flights.csv')
+flights_ct = flights.groupby(['ORG_AIR', 'DEST_AIR']).size()
+flights_ct.head()
+flights_ct.loc[[('ATL', 'IAH'), ('IAH', 'ATL')]]
+flights[['ORG_AIR', 'DEST_AIR']].apply(sorted, axis=1)
+flights_sort = flights[['ORG_AIR', 'DEST_AIR']].apply(sorted, axis=1)
+type(flights_sort) ## it does not return df, but series
+flights_sort.head()
+AIR1 = []
+for i in range(len(flights_sort)):
+    AIR1.append(flights_sort[i][0])
+
+AIR2 = []
+for i in range(len(flights_sort)):
+    AIR2.append(flights_sort[i][1])
+
+flights_sort = pd.DataFrame({'AIR1' : AIR1, 'AIR2' : AIR2})
+flights_sort.head()
+
+flights_ct2 = flights_sort.groupby(['AIR1', 'AIR2']).size()
+flights_ct2
+
+flights_ct2.loc[('ATL', 'IAH')]
+
+data_sorted = np.sort(flights[['ORG_AIR', 'DEST_AIR']])
+data_sorted
+flights_sort2 = pd.DataFrame(data_sorted, columns=['AIR1', 'AIR2'])
+flights_sort.head()
+len(flights_sort)
+flights_sort.columns
+flights_sort2.head()
+len(flights_sort2)
+flights_sort2.columns
+
+flights_sort2.equals(flights_sort)
+
+# find the longeat streak of on-time flights
+
+s = pd.Series([0, 1, 1, 0, 1, 1, 1, 0])
+s
+s1 = s.cumsum()
+s1
+s.mul(s1)
+s.mul(s1).diff()
+s.mul(s1).diff().where(lambda x : x<0)
+s.mul(s1).diff().where(lambda x : x<0).ffill()
+s.mul(s1).diff().where(lambda x : x<0).ffill().add(s1, fill_value=0)
+s.mul(s1).diff().where(lambda x : x<0).ffill().add(s1, fill_value=0).max()
+
+flights = pd.read_csv('./data/flights.csv')
+flights['ARR_DELAY'][:5]
+flights['ARR_DELAY'].lt(15)[:5]
+flights['ARR_DELAY'].lt(15).astype(int)[:5]
+flights['ON_TIME'] = flights['ARR_DELAY'].lt(15).astype(int)
+flights[['AIRLINE', 'ORG_AIR', 'ON_TIME']].head(10)
+
+
+def max_streak(s):
+    s1 = s.cumsum()
+    return s.mul(s1).diff().where(lambda x : x < 0).ffill().add(s1, fill_value=0).max()
+
+flights.sort_values(['MONTH', 'DAY', 'SCHED_DEP'])\
+.groupby(['AIRLINE', 'ORG_AIR'])['ON_TIME']\
+.agg(['mean', 'size', max_streak]).round(2).head()
+
+def max_delay_streak(df):
+    df = df.reset_index(drop=True)
+    s = 1 - df['ON_TIME']
+    s1 = s.cumsum()
+    streak = s.mul(s1).diff().where(lambda x : x<0).ffill().add(s1, fill_value=0)
+    last_idx = streak.idxmax()
+    first_idx = last_idx - streak.max() + 1
+    df_return = df.loc[[first_idx, last_idx], ['MONTH', 'DAY']]
+    df_return['streak'] = streak.max()
+    df_return.index = ['first', 'last']
+    df_return.index.name = 'type'
+    return df_return
+
+flights.sort_values(['MONTH', 'DAY', 'SCHED_DEP'])\
+.groupby(['AIRLINE', 'ORG_AIR'])\
+.apply(max_delay_streak)\
+.sort_values('streak', ascending=False).head(10)
+
+# restructuring data in tidy form
+state_fruit = pd.read_csv('./data/state_fruit.csv', index_col=0)
+state_fruit
+state_fruit.stack()
+state_fruit_tidy = state_fruit.stack().reset_index()
+state_fruit_tidy
+state_fruit_tidy.columns = ['state', 'fruit', 'weight']
+state_fruit_tidy
+state_fruit.stack().rename_axis(['state', 'fruit'])
+state_fruit.stack().rename_axis(['state' ,'fruit']).reset_index(name = 'weight')
+state_fruit2.stack()
+state_fruit2.set_index('State').stack()
+
+# melt() :: id_vars, value_vars
+state_fruit2 = pd.read_csv('./data/state_fruit2.csv')
+state_fruit2
+state_fruit2.melt(id_vars = ['State'], value_vars = ['Apple', 'Orange', 'Banana'])
+state_fruit2.melt(id_vars = ['State'], value_vars = ['Apple', 'Orange', 'Banana'], 
+                  var_name= 'Fruit', value_name = 'Weight')
+
+# id_vars : lists that are wanted to be a columns without being restuctured.
+# value_vars : list that consist of columns' names which are wanted to be restructured as an single column
+ # melt, stacking, unpivoting
+state_fruit2
+state_fruit2.melt()
+state_fruit2.melt(id_vars='State')
+
+movie = pd.read_csv('./data/movie.csv')
+actor = movie[['movie_title', 'actor_1_name', 
+               'actor_2_name', 'actor_3_name',
+               'actor_1_facebook_likes', 'actor_2_facebook_likes', 
+               'actor_3_facebook_likes']]
+actor.head()
+
+# wide_to_long()
+list(actor.columns)
+
+def change_col_name(col_name):
+    col_name = col_name.replace('_name', '')
+    if 'facebook' in col_name:
+        fb_idx = col_name.find('facebook')
+        col_name = col_name[:5] + col_name[fb_idx - 1 :] + col_name[5:fb_idx-1]
+    return col_name
+
+actor2 = actor.rename(columns=change_col_name)
+actor2.head()
+stubs = ['actor', 'actor_facebook_likes']
+actor2_tidy = pd.wide_to_long(actor2, stubnames =stubs, 
+                              i = ['movie_title'], 
+                              j = 'actor_num',
+                              sep = '_')
+
+actor2_tidy.head()
+
+df = pd.read_csv('./data/stackme.csv')
+df2 = df.rename(columns={'a1' : 'group1_a1', 'b2' : 'group_b2', 
+                         'd' : 'group2_a1', 'e' : 'group_b2'})
+
+df2
+
+pd.wide_to_long(df2, 
+                stubnames=['group1', 'group2'],
+                i=['State', 'Country', 'Test'],
+                j = 'Label',
+                suffix='.+',
+                sep = '_')
+
+
+
