@@ -285,5 +285,133 @@ pd.wide_to_long(df2,
                 suffix='.+',
                 sep = '_')
 
+# stack/unstack inverting
+usecol_func = lambda x : 'UGDS_' in x or x == 'INSTNM'
+usecol_func
+college = pd.read_csv('./data/college.csv', index_col = 'INSTNM', usecols = usecol_func)
+college.head()
+college_stacked = college.stack()
+college_stacked.head(18)
+college_stacked.unstack()
+
+# melt/pivot inverting
+college2 = pd.read_csv('./data/college.csv', usecols = usecol_func)
+college2.head()
+college_melted = college2.melt(id_vars='INSTNM', 
+                               var_name='Race', 
+                               value_name='Percentage')
+
+college_melted.head()
+melted_inv = college_melted.pivot(index = 'INSTNM', 
+                                  columns = 'Race', 
+                                  values = 'Percentage')
+
+
+college2_replication = melted_inv.loc[college2['INSTNM'], college2.columns[1:]].reset_index()
+college2.equals(college2_replication)
+
+college.head()
+college.stack().unstack(0)
+college.T
+college.transpose()
+
+# groupby() & unstacking
+employee = pd.read_csv('./data/employee.csv')
+employee.groupby('RACE')['BASE_SALARY'].mean().astype(int)
+agg = employee.groupby(['RACE', 'GENDER'])['BASE_SALARY'].mean().astype(int)
+agg
+agg.unstack('GENDER')
+agg.unstack('RACE')
+
+agg2 = employee.groupby(['RACE', 'GENDER'])['BASE_SALARY'].agg(['mean', 'max', 'min']).astype(int)
+agg2
+agg2.unstack('GENDER')
+
+# groupby() & pivot_table()
+flights = pd.read_csv('./data/flights.csv')
+fp = flights.pivot_table(index='AIRLINE',
+                         columns='ORG_AIR',
+                         values = 'CANCELLED', 
+                         aggfunc = 'sum', fill_value=0).round(2)
+
+fp.head()
+fg = flights.groupby(['AIRLINE', 'ORG_AIR'])['CANCELLED'].sum()
+fg.head()
+fg_unstack = fg.unstack('ORG_AIR', fill_value=0)
+fp.equals(fg_unstack)
+
+flights.pivot_table(index=['AIRLINE', 'MONTH'], 
+                    columns=['ORG_AIR', 'CANCELLED'],
+                    values=['DEP_DELAY', 'DIST'],
+                    aggfunc=[np.sum, np.mean], 
+                    fill_value=0)
+
+flights.groupby(['AIRLINE', 'MONTH', 'ORG_AIR', 'CANCELLED'])['DEP_DELAY', 'DIST']\
+.agg(['mean', 'sum']).unstack(['ORG_AIR', 'CANCELLED'], fill_value=0).swaplevel(0,1,axis='columns')
+
+college = pd.read_csv('./data/college.csv')
+cg = college.groupby(['STABBR', 'RELAFFIL'])['UGDS', 'SATMTMID'].agg(['count', 'min', 'max']).head()
+cg
+cg = cg.rename_axis(['AGG_COLS', 'AGG_FUNCS'], axis='columns')
+cg
+cg.stack('AGG_FUNCS').head()
+cg.stack('AGG_FUNCS').swaplevel('AGG_FUNCS', 'STABBR', axis='index').head()
+cg.stack('AGG_FUNCS')\
+.swaplevel('AGG_FUNCS', 'STABBR', axis='index')\
+.sort_index(level='RELAFFIL', axis='index')\
+.sort_index(level='AGG_COLS', axis='columns').head(6)
+cg.stack('AGG_FUNCS').unstack(['RELAFFIL', 'STABBR'])
+cg.stack(['AGG_FUNCS', 'AGG_COLS']).head(12)
+cg.rename_axis([None, None], axis='index').rename_axis([None, None], axis='columns')
+
+weightlifting = pd.read_csv('./data/weightlifting_men.csv')
+weightlifting
+wl_melt = weightlifting.melt(id_vars='Weight Category', 
+                             var_name='sex_age',
+                             value_name='Qual Total')
+wl_melt.head()
+sex_age = wl_melt['sex_age'].str.split(expand=True)
+sex_age.head()
+sex_age.columns = ['Sex', 'Age Group']
+sex_age.head()
+sex_age['Sex'] = sex_age['Sex'].str[0]
+sex_age.head()
+wl_cat_total = wl_melt[['Weight Category', 'Qual Total']]
+wl_tidy = pd.concat([sex_age, wl_cat_total], axis='columns')
+wl_tidy.head()
+
+cols = ['Weight Category', 'Qual Total']
+sex_age[cols] = wl_melt[cols]
+sex_age[cols]
+wl_melt[cols]
+
+
+age_group = wl_melt.sex_age.str.extract('(\d{2}[-+](?:\d{2})?)', expand=False)
+age_group
+sex = wl_melt.sex_age.str[0]
+new_cols = {'Sex' : sex, 'Age Group' : age_group}
+wl_tidy2 = wl_melt.assign(**new_cols).drop('sex_age', axis='columns')
+wl_tidy2.sort_index(axis=1).equals(wl_tidy.sort_index(axis=1))
+
+inspections = pd.read_csv('./data/restaurant_inspections.csv', parse_dates = ['Date'])
+inspections
+
+inspections.set_index(['Name', 'Date', 'Info']).head(10)
+inspections.set_index(['Name', 'Date', 'Info']).unstack('Info').head()
+insp_tidy = inspections.set_index(['Name', 'Date', 'Info']).unstack('Info').reset_index(col_level=-1)
+insp_tidy.head()
+insp_tidy.columns = insp_tidy.columns.droplevel(0).rename(None)
+insp_tidy.head()
+inspections.set_index(['Name', 'Date', 'Info']).squeeze()\
+.unstack('Info')\
+.reset_index()\
+.rename_axis(None, axis='columns')
+
+inspections.pivot_table(index=['Name', 'Date'], 
+                        columns='Info', 
+                        values='Value',
+                        aggfunc='first').reset_index().rename_axis(None, axis='columns')
+
+
 
 
