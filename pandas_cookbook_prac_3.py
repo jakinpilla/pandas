@@ -228,12 +228,13 @@ state_fruit_tidy.columns = ['state', 'fruit', 'weight']
 state_fruit_tidy
 state_fruit.stack().rename_axis(['state', 'fruit'])
 state_fruit.stack().rename_axis(['state' ,'fruit']).reset_index(name = 'weight')
-state_fruit2.stack()
-state_fruit2.set_index('State').stack()
+
 
 # melt() :: id_vars, value_vars
 state_fruit2 = pd.read_csv('./data/state_fruit2.csv')
 state_fruit2
+state_fruit2.stack()
+state_fruit2.set_index('State').stack()
 state_fruit2.melt(id_vars = ['State'], value_vars = ['Apple', 'Orange', 'Banana'])
 state_fruit2.melt(id_vars = ['State'], value_vars = ['Apple', 'Orange', 'Banana'], 
                   var_name= 'Fruit', value_name = 'Weight')
@@ -411,6 +412,76 @@ inspections.pivot_table(index=['Name', 'Date'],
                         columns='Info', 
                         values='Value',
                         aggfunc='first').reset_index().rename_axis(None, axis='columns')
+
+cities = pd.read_csv('./data/texas_cities.csv')
+cities
+geolocations = cities.Geolocation.str.split(pat='. ', expand=True)
+geolocations.columns = ['lat', 'lat_direc', 'log', 'log_direc']
+geolocations
+geoloc = geolocations.astype({'lat' : 'float', 'log' : 'float'})
+geoloc.dtypes
+geoloc
+cities_tidy = pd.concat([cities['City'], geoloc], axis=1)
+cities_tidy
+geoloc.apply(pd.to_numeric, errors = 'ignore')
+
+cities = pd.read_csv('./data/texas_cities.csv')
+geolocations = cities.Geolocation.str.split(pat=' |, ', expand=True)
+geolocations
+cities.Geolocation.str.extract('([0-9.]+). (N|S), ([0-9.]+). (E|W)', expand=True)
+
+sensors = pd.read_csv('./data/sensors.csv')
+sensors
+sensors.melt(id_vars=['Group', 'Property'], var_name='Year').head(10)
+sensors.melt(id_vars=['Group', 'Property'], var_name='Year')\
+.pivot_table(index=['Group', 'Year'], columns='Property', values='value')\
+.reset_index().rename_axis(None, axis='columns')
+
+sensors
+sensors.set_index(['Group', 'Property'])
+sensors.set_index(['Group', 'Property']).stack()
+sensors.set_index(['Group', 'Property']).stack().unstack('Property')
+
+sensors.set_index(['Group', 'Property']).stack().unstack('Property')\
+.rename_axis(['Group', 'Year'], axis='index')
+
+sensors.set_index(['Group', 'Property']).stack().unstack('Property')\
+ 
+# Tidying when multiple observational units are stored in the same table
+
+movie = pd.read_csv('./data/movie_altered.csv')
+movie.head()
+movie.insert(0, 'id', np.arange(len(movie)))
+movie.head()
+movie.columns
+stubnames=['director', 'director_fb_likes', 'actor', 'actor_fb_likes']
+movie_long = pd.wide_to_long(movie, 
+                             stubnames=stubnames,
+                             i='id',
+                             j='num',
+                             sep='_').reset_index()
+
+# stubnames : The stub name(s). The wide format variables are assumed to start with the stub names.
+# i : Column(s) to use as id variable(s)
+# j : The name of the subobservation variable. What you wish to name your suffix in the long format.
+movie_long.head()
+movie_long.columns
+movie_long.info()
+
+movie_table = movie_long[['id', 'year', 'duration', 'rating']]
+director_table = movie_long[['id', 'num', 'director', 'director_fb_likes']]
+actor_table = movie_long[['id', 'num', 'actor', 'actor_fb_likes']]
+
+movie_table = movie_table.drop_duplicates().reset_index(drop=True)
+director_table = director_table.dropna().reset_index(drop=True)
+actor_table = actor_table.dropna().reset_index(drop=True)
+
+movie.memory_usage(deep=True)
+
+
+
+
+
 
 
 
