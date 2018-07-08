@@ -468,7 +468,7 @@ movie_long.head()
 movie_long.columns
 movie_long.info()
 
-movie_table = movie_long[['id', 'year', 'duration', 'rating']]
+movie_table = movie_long[['id', 'title', 'year', 'duration', 'rating']]
 director_table = movie_long[['id', 'num', 'director', 'director_fb_likes']]
 actor_table = movie_long[['id', 'num', 'actor', 'actor_fb_likes']]
 
@@ -476,9 +476,147 @@ movie_table = movie_table.drop_duplicates().reset_index(drop=True)
 director_table = director_table.dropna().reset_index(drop=True)
 actor_table = actor_table.dropna().reset_index(drop=True)
 
-movie.memory_usage(deep=True)
+movie.memory_usage(deep=True).sum() # 2289466
 
+movie_table.memory_usage(deep=True).sum() +\
+director_table.memory_usage(deep=True).sum() +\
+actor_table.memory_usage(deep=True).sum() # 2259676 ??
 
+director_cate=pd.Categorical(director_table['director'])
+director_cate.codes
+director_table.insert(1, 'director_id', director_cate.codes)
+
+actor_cate = pd.Categorical(actor_table['actor'])
+actor_table.insert(1, 'actor_id', actor_cate.codes)
+
+director_associative = director_table[['id', 'director_id', 'num']]
+dcols = ['director_id', 'director', 'director_fb_likes']
+director_unique = director_table[dcols].drop_duplicates().reset_index(drop=True)
+
+actor_associative = actor_table[['id', 'actor_id', 'num']]
+acols = ['actor_id', 'actor', 'actor_fb_likes']
+actor_unique = actor_table[acols].drop_duplicates().reset_index(drop=True)
+
+actors = actor_associative.merge(actor_unique, on='actor_id')\
+.drop('actor_id', 1)\
+.pivot_table(index='id', columns='num', aggfunc='first')
+
+actors.columns = actors.columns.get_level_values(0) + '_' + \
+actors.columns.get_level_values(1).astype(str)
+
+directors = director_associative.merge(director_unique, on='director_id')\
+.drop('director_id', 1)\
+.pivot_table(index='id', columns='num', aggfunc='first')
+
+directors.columns = directors.columns.get_level_values(0) + '_' +\
+directors.columns.get_level_values(1).astype(str)
+
+movie2 = movie_table.merge(directors.reset_index(), on='id', how='left')\
+.merge(actors.reset_index(), on='id', how='left')
+
+movie.equals(movie2[movie.columns]) ## False :: why??
+
+# combining pandas object
+# appending new rows to dataframe
+
+names = pd.read_csv('./data/names.csv')
+new_data_list = ['Aria', 1]
+names.loc[4] = new_data_list
+names
+names.loc['five']=['Zach', 3]
+names
+names.loc[len(names)] = {'Name' : 'Zayd', 'Age' : 2}
+names
+names.loc[len(names)]=pd.Series({'Age' : 32, 'Name' : 'Dean'})
+names
+names.append({'Name':'Aria', 'Age':1}, ignore_index=True)
+names = pd.read_csv('./data/names.csv')
+names.index=['Canada', 'Canada', 'USA', 'USA']
+names
+s = pd.Series({'Name':'Zach', 'Age':3}, name=len(names))
+s
+names.append(s)
+
+s1=pd.Series({'Name':'Zach', 'Age':3}, name=len(names))
+s2=pd.Series({'Name':'Zayd', 'Age':2}, name='USA')
+names.append([s1, s2])
+
+bball_16=pd.read_csv('./data/baseball16.csv')
+bball_16.head()
+data_dict=bball_16.iloc[0].to_dict()
+print(data_dict)
+new_data_dict = {k: '' if isinstance(v, str) else np.nan for k, v in data_dict.items()}
+data_dict.items()
+print(new_data_dict)
+
+random_data=[]
+for i in range(1000):
+    d=dict()
+    for k, v in data_dict.items():
+        if isinstance(v, str):
+            d[k] = np.random.choice(list('abcde'))
+        else:
+            d[k] = np.random.randint(10)
+    random_data.append(pd.Series(d, name=i + len(bball_16)))
+
+random_data[0].head()
+
+bball_16_copy = bball_16.copy()
+for row in random_data:
+    bball_16_copy = bball_16_copy.append(row)
+    
+bball_16_copy = bball_16.copy()
+bball_16_copy = bball_16_copy.append(random_data)
+
+stocks_2016=pd.read_csv('./data/stocks_2016.csv', index_col='Symbol')
+stocks_2017=pd.read_csv('./data/stocks_2017.csv', index_col='Symbol')
+s_list=[stocks_2016, stocks_2017]
+pd.concat(s_list)
+pd.concat(s_list, keys=['2016', '2017'], names=['Year', 'Symbol'])
+pd.concat(s_list, keys=['2016', '2017'], axis='columns', names=['Year', None]) # outer join
+pd.concat(s_list, join='inner', keys=['2016', '2017'], axis='columns', names=['Year', None]) # inner join
+
+stocks_2016.append(stocks_2017)
+
+base_url = 'http://www.presidency.ucsb.edu/data/popularity.php?pres={}'
+trump_url = base_url.format(45)
+df_list = pd.read_html(trump_url)
+len(df_list) # 14 :: 14 df
+
+df0 = df_list[0]
+df0.shape
+df0.head()
+df_list=pd.read_html(trump_url, match='Start Date')
+len(df_list)
+df_list=pd.read_html(trump_url, match='Start Date', attrs={'align':'center'})
+len(df_list)
+trump=df_list[0]
+trump.shape
+trump.head()
+df_list = pd.read_html(trump_url, match='Start Date', attrs={'align':'center'},
+                       header=0, skiprows=[0,1,2,3,5], parse_dates=['Start Date', 'End Date'])
+trump=df_list[0]
+trump.head()
+trump=trump.dropna(axis=1, how='all')
+trump.head()
+trump.isnull().sum()
+trump=trump.ffill()
+trump.head()
+trump.dtypes
+
+def get_pres_appr(pres_num):
+    base_url = 'http://www.presidency.ucsb.edu/data/popularity.php?pres={}'
+    pres_url = base_url.format(pres_num)
+    df_list = pd.read_html(pres_url, match='Start Date',
+                          attrs={'align':'center'},
+                          header=0, skiprows=[0,1,2,3,5],
+                          parse_dates=['Start Date', 'End Date'])
+    pres=df_list[0].copy()
+    pres=pres.dropna(axis=1, how='all')
+    pres['President']=pres['President'].ffill()
+    return pres.sort_values('End Date').reset_index(drop=True)
+
+obama=get_pres_appr(44)
 
 
 
