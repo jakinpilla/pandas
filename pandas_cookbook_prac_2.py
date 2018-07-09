@@ -378,4 +378,36 @@ groups = list(grouped.groups.keys())
 groups[:5]
 grouped.get_group(('FL', 1)).head()
 
+from IPython.display import display
+for name, group in grouped:
+    print(name)
+    display(group.head(3))
 
+grouped.head(2).head(6)
+grouped.nth([1, -1]).head()
+
+# ------------------
+college = pd.read_csv('./data/college.csv', index_col = 'INSTNM')
+grouped = college.groupby('STABBR')
+grouped.ngroups
+college['STABBR'].nunique()
+
+def check_minority(df, threshold):
+    minority_pct= 1 - df['UGDS_WHITE']
+    total_minority = (df['UGDS']*minority_pct).sum()
+    total_ugds = df['UGDS'].sum()
+    total_minority_pct = total_minority /total_ugds
+    return total_minority_pct > threshold
+
+college_filtered = grouped.filter(check_minority, threshold=.5)
+college_filtered.head()
+college.shape
+college_filtered.shape
+college_filtered['STABBR'].nunique()
+
+college_filtered_20 = grouped.filter(check_minority, threshold=.2)
+college_filtered_20.shape
+college_filtered_20['STABBR'].nunique()
+college_filtered_70 = grouped.filter(check_minority, threshold=.7)
+college_filtered_70.shape
+college_filtered_70['STABBR'].nunique()

@@ -7,7 +7,7 @@ Created on Sat Jul  7 08:08:56 2018
 
 from os import getcwd, chdir
 getcwd()
-chdir('C:/Users/Daniel/pandas')
+chdir('C:/Users/dsc/pandas')
 import numpy as np
 import pandas as pd
 
@@ -617,6 +617,203 @@ def get_pres_appr(pres_num):
     return pres.sort_values('End Date').reset_index(drop=True)
 
 obama=get_pres_appr(44)
+obama.head()
+
+pres_41_45 = pd.concat([get_pres_appr(x) for x in range(41, 46)], ignore_index=True)
+
+get_pres_appr(41)
+get_pres_appr(42)
+get_pres_appr(43)
+get_pres_appr(44)
+get_pres_appr(45)
+
+pres_41_45.groupby('President').head(3)
+pres_41_45['End Date'].value_counts().head(8)
+pres_41_45 = pres_41_45.drop_duplicates(subset='End Date')
+pres_41_45.shape
+pres_41_45['President'].value_counts()
+pres_41_45.groupby('President', sort=False).median().round(1)
+
+import matplotlib.pyplot as plt
+from matplotlib import cm
+fig, ax = plt.subplots(figsize=(16, 6))
+styles=['-.', '-', ':', '-', ':']
+colors=[.9, .3, .7, .3, .9]
+groups=pres_41_45.groupby('President', sort=False)
+for style, color, (pres, df) in zip(styles, colors, groups):
+    df.plot('End Date', 'Approving', ax=ax,
+            label=pres, style=style, color=cm.Greys(color),
+            title='Presidential Approval Rating')
+    
+days_func=lambda x: x - x.iloc[0]
+pres_41_45['Days in Office']=pres_41_45.groupby('President')['End Date']\
+.transform(days_func)
+pres_41_45.head()
+pres_41_45.groupby('President').head(3)
+pres_41_45.dtypes
+pres_41_45['Days in Office']=pres_41_45['Days in Office'].dt.days
+pres_41_45['Days in Office'].head()
+pres_pivot = pres_41_45.pivot(index='Days in Office', 
+                              columns='President',
+                              values='Approving')
+pres_pivot.head()
+plot_kwargs = dict(figsize=(16, 6), color=cm.gray([.3, .7]), 
+                   style=['-', '--'], title='Approval Rating')
+pres_pivot.loc[:250, ['Donald J. Trump', 'Barack Obama']].ffill().plot(**plot_kwargs)
+pres_rm = pres_41_45.groupby('President', sort=False).rolling('90D', on='End Date')['Approving']\
+.mean()
+pres_rm.head()
+
+styles=['-.', '-', ':', '-', ':']
+colors = [.9, .3, .7, .3, .9]
+color=cm.Greys(colors)
+title='90 Day Approval Rating Rolling Average'
+plot_kwargs=dict(figsize=(16, 6), style=styles, color=color, title=title)
+correct_col_order = pres_41_45.President.unique()
+pres_rm.unstack('President')[correct_col_order].plot(**plot_kwargs)
+
+# difference between concat, join and merge
+from IPython.display import display_html
+years=2016, 2017, 2018
+stock_tables = [pd.read_csv('./data/stocks_{}.csv'.format(year), 
+                            index_col='Symbol') for year in years]
+
+def display_frames(frames, num_spaces=0):
+    t_style = '<table style="display: inline;"'
+    tables_html = [df.to_html().replace('<table', t_style) for df in frames]
+    space ='&nbsp;' * num_spaces
+    display_html(space.join(tables_html), raw=True)
+
+display_frames(stock_tables, 30)
+stocks_2016, stocks_2017, stocks_2018 = stock_tables
+stocks_2016
+stocks_2017
+stocks_2018
+stock_tables
+
+pd.concat(stock_tables, keys=[2016, 2017, 2018])
+zip(years, stock_tables)
+dict(zip(years, stock_tables))
+pd.concat(dict(zip(years, stock_tables)), axis='columns')
+stocks_2016.join(stocks_2017, lsuffix='_2016', rsuffix='_2017', how='outer')
+
+other=[stocks_2017.add_suffix('_2017'), stocks_2018.add_suffix('_2018')]
+stocks_2016.add_suffix('_2016').join(other, how='outer')
+
+stock_join=stocks_2016.add_suffix('_2016').join(other, how='outer')
+stock_concat = pd.concat(dict(zip(years, stock_tables)), axis='columns')
+level_1 = stock_concat.columns.get_level_values(1)
+level_0 = stock_concat.columns.get_level_values(0).astype(str)
+stock_concat.columns = level_1 + '_' + level_0
+stock_join.equals(stock_concat)
+
+stocks_2016.merge(stocks_2017, left_index=True, right_index=True)
+
+step1=stocks_2016.merge(stocks_2017, left_index=True, right_index=True, how='outer',
+                       suffixes=('_2016', '_2017'))
+stock_merge =step1.merge(stocks_2018.add_suffix('_2018'),left_index=True, right_index = True,
+                         how='outer')
+stock_concat.equals(stock_merge)
+
+names=['prices', 'transactions']
+food_tables = [pd.read_csv('./data/food_{}.csv'.format(name)) for name in names]
+food_tables
+food_prices, food_transactions = food_tables
+display_frames(food_tables, 30)
+food_transactions.merge(food_prices, on=['item', 'store'])
+food_transactions.merge(food_prices.query('Date == 2017'),how='left')
+food_prices_join=food_prices.query('Date == 2017').set_index(['item', 'store'])
+food_prices_join
+food_transactions.join(food_prices_join, on=['item', 'store'])
+
+import glob
+
+glob.glob('./data/gas prices/*.csv')
+
+df_list=[]
+for filename in glob.glob('./data/gas prices/*.csv'):
+    df_list.append(pd.read_csv(filename, index_col = 'Week', parse_dates=['Week']))
+
+gas=pd.concat(df_list, axis='columns')
+gas.head()
+
+from sqlalchemy import create_engine
+engine = create_engine('sqlite:///data/chinook.db')
+
+tracks = pd.read_sql_table('tracks', engine)
+tracks.head()
+
+genres = pd.read_sql_table('genres', engine)
+genres
+
+genre_track = genres.merge(tracks[['GenreId', 'Milliseconds']], on='GenreId', how='left')\
+.drop('GenreId', axis='columns')
+
+genre_track.head()
+
+genre_time = genre_track.groupby('Name')['Milliseconds'].mean()
+pd.to_timedelta(genre_time, unit='ms').dt.floor('s').sort_values()
+
+cust = pd.read_sql_table('customers', engine, columns=['CustomerId', 'FirstName',
+                                                       'LastName'])
+invoice = pd.read_sql_table('invoices', engine, columns=['InvoiceId', 'CustomerId'])
+ii = pd.read_sql_table('invoice_items', engine, 
+                       columns=['InvoiceId', 'UnitPrice', 'Quantity'])
+
+cust_inv = cust.merge(invoice, on='CustomerId').merge(ii, on='InvoiceId')
+cust_inv.head()
+total=cust_inv['Quantity']*cust_inv['UnitPrice']
+cols=['CustomerId', 'FirstName', 'LastName']
+cust_inv.assign(Total=total).groupby(cols)['Total'].sum()\
+.sort_values(ascending=False).head()
+
+sql_string1='''
+select
+    Name,
+    time(avg(Milliseconds)/1000, 'unixepoch') as avg_time
+from (
+      select
+          g.Name,
+          t.Milliseconds
+    from genres as g
+    join
+        tracks as t
+        on
+            g.genreid == t.genreid
+    )
+group by 
+    Name
+order by
+    avg_time
+'''
+pd.read_sql_query(sql_string1, engine)
+
+sql_string2='''
+select
+    c.customerid,
+    c.FirstName,
+    c.LastName,
+    sum(ii.quantity*ii.unitprice) as Total
+from
+    customers as c
+join
+    invoices as i
+    on c.customerid = i.customerid
+join
+    invoice_items as ii
+        on i.invoiceid = ii.invoiceid
+group by
+    c.customerid, c.FirstName, c.LastName
+order by 
+    Total desc
+'''
+pd.read_sql_query(sql_string2, engine)
+
+
+
+
+
+
 
 
 
