@@ -4,6 +4,12 @@ Created on Mon Jul  9 15:44:25 2018
 
 @author: dsc
 """
+
+from os import getcwd, chdir
+wd = getcwd()
+chdir(wd)
+getcwd()
+
 import numpy as np
 import pandas as pd
 import datetime
@@ -263,9 +269,141 @@ goal_period = ad_period[ad_period['REPORTED_DATE'] == aug_2018].reset_index(drop
 goal_period.info()
 goal['Total_Goal'] = goal['Total_Goal'].astype(int)
 goal_period['Total_Goal'] = goal_period['Total'].mul(.8).astype(int)
+
 #pd.merge_asof(goal_period, ad_period, left_on = 'Total_Goal', 
 #              right_on = 'Total' , by = 'OFFENSE_CATEGORY_ID', 
 #              suffixes = ('_Current', '_Last')).head()
 # error :: incompatible merge keys [1] int32 and int64, must be the same type
+
+import matplotlib.pyplot as plt
+x = [-3, 5, 7]
+y = [10, 2, 5]
+plt.figure(figsize=(15, 3))
+plt.plot(x, y)
+plt.xlim(0, 10)
+plt.ylim(-3, 8)
+plt.xlabel('X Axis')
+plt.ylabel('Y axis')
+plt.title('Line Plot')
+plt.suptitle('Figure Title', size=20, y=1.03)
+
+fig, ax = plt.subplots(figsize=(15, 3))
+ax.plot(x, y)
+ax.set_xlim(0, 10)
+ax.set_ylim(-3, 8)
+ax.set_xlabel('X axis')
+ax.set_ylabel('Y axis')
+ax.set_title('Line Plot')
+fig.suptitle('Figure Title', size=20, y=1.03)
+
+fig, ax = plt.subplots(nrows=1, ncols=1)
+# fig.get_size_inches()
+fig.set_size_inches(14, 4)
+# fig
+# fig.axes
+# fig.axes[0] is ax
+fig.set_facecolor('.9')
+ax.set_facecolor('.7')
+
+ax_children = ax.get_children()
+ax_children #  4 spines, 2 aixs
+
+spines = ax.spines
+spine_left = spines['left']
+spine_left.set_position(('outward', -100))
+spine_left.set_linewidth(5)
+
+spine_bottom = spines['bottom']
+spine_bottom.set_visible(False)
+
+ax.xaxis.grid(True, which='major', linewidth=2, color='black', linestyle='--')
+ax.xaxis.set_ticks([.2, .4, .55, .93])
+ax.xaxis.set_label_text('X Axis', family='Verdana', fontsize=15)
+
+ax.set_ylabel('Y lablel', family='Calibri', fontsize=20)
+ax.set_yticks([.1, .9])
+ax.set_yticklabels(['point 1', 'point 9'], rotation=46)
+
+plot_objects = plt.subplots(nrows=1, ncols=1)
+type(plot_objects)
+fig = plot_objects[0]
+ax = plot_objects[1]
+
+plot_objects = plt.subplots(2, 4)
+plot_objects[1]
+
+fig.axes == fig.get_axes()
+ax.xaxis == ax.get_xaxis()
+ax.yaxis == ax.get_yaxis()
+ax.xaxis.properties()
+
+movie = pd.read_csv('./data/movie.csv')
+med_budget = movie.groupby('title_year')['budget'].median()/1e6
+med_budget_roll = med_budget.rolling(5, min_periods=1).mean()
+med_budget_roll.tail()
+
+years = med_budget_roll.index.values
+# years[-5:]
+budget = med_budget_roll.values
+# budget[-5:]
+fig, ax = plt.subplots(figsize=(14,4), linewidth=5, edgecolor='.5')
+ax.plot(years, budget, linestyle='--', linewidth=3, color='.2', label='All Movies')
+text_kwargs=dict(fontsize=20, family='cursive')
+ax.set_title('Median Movie Bduget', **text_kwargs)
+ax.set_ylabel('Millions of Dollars', **text_kwargs)
+
+movie_count = movie.groupby('title_year')['budget'].count()
+movie_count.tail()
+ct = movie_count.values
+budget.max()
+ct_norm = ct/ct.max() * budget.max()
+
+fifth_year= (years % 5 == 0) & (years >= 1970)
+years_5 = years[fifth_year]
+ct_5 = ct[fifth_year]
+ct_norm_5 = ct_norm[fifth_year]
+
+ax.bar(years_5, ct_norm_5, 3, facecolor = '.5', alpha=.3, label='Movies per Year')
+ax.set_xlim(1968, 2017)
+for x, y, v, in  zip(years_5, ct_norm_5, ct_5):
+    ax.text(x, y + .5, str(v), ha='center')
+ax.legend()
+fig
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
