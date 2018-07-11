@@ -337,6 +337,8 @@ ax.xaxis == ax.get_xaxis()
 ax.yaxis == ax.get_yaxis()
 ax.xaxis.properties()
 
+import matplotlib.pyplot as plt
+
 movie = pd.read_csv('./data/movie.csv')
 med_budget = movie.groupby('title_year')['budget'].median()/1e6
 med_budget_roll = med_budget.rolling(5, min_periods=1).mean()
@@ -371,8 +373,109 @@ ax.legend()
 fig
 
 top10 = movie.sort_values('budget', ascending=False)\
+<<<<<<< HEAD
 .groupby('title_year')['budget']\
 .apply(lambda x : x.iloc[:10].median() / 1e6)
+=======
+.groupby('title_year')['budget'].apply(lambda x : x.iloc[:10].median() / 1e6)
+
+top10_roll = top10.rolling(5, min_periods=1).mean()
+top10_roll.tail()
+
+fig2, ax_array = plt.subplots(2, 1, figsize=(14, 8), sharex=True)
+ax1 = ax_array[0]
+ax2 = ax_array[1]
+
+ax1.plot(years, budget, linestyle='--', linewidth=3, color='.2', label='All Movies')
+ax1.bar(years_5, ct_norm_5, 3, facecolor='.5', alpha=.3, label='Movie per Year')
+ax1.legend(loc='upper left')
+ax1.set_xlim(1968, 2017)
+plt.setp(ax1.get_xticklines(), visible=False)
+for x, y, v in zip(years_5, ct_norm_5, ct_5):
+    ax1.text(x, y+.5, str(v), ha='center')
+
+ax2.plot(years, top10_roll.values, color='.2', label = 'Top 10 Movies')
+ax2.legend(loc='upper left')
+fig2.tight_layout()
+fig2.suptitle('Median Movie Budget', y=1.02, **text_kwargs)
+fig2.text(0, .6, 'Million of Dollars', rotation='vertical', ha='center', **text_kwargs)
+
+import os
+path = os.path.expanduser('~/Desktop/movie_budget.png')
+fig2.savefig(path, bbox_inches='tight')
+
+# rolling
+med_budget = movie.groupby('title_year')['budget'].median()/1e6
+med_budget.head()
+med_budget.loc[2012:2016].mean()
+med_budget.loc[2011:2015].mean()
+med_budget.loc[2010:2014].mean()
+med_budget_roll = med_budget.rolling(5, min_periods=1).mean()
+med_budget_roll.tail()
+
+movie = pd.read_csv('./data/movie.csv')
+cols = ['budget', 'title_year', 'imdb_score', 'movie_title']
+m = movie[cols].dropna()
+m['budget2'] = m['budget']/ 1e6
+np.random.seed(0)
+movie_samp = m.query('title_year >= 2000').sample(100)
+fig, ax = plt.subplots(figsize=(14, 6))
+ax.scatter(x='title_year', y='imdb_score', s='budget2', data=movie_samp)
+ax.scatter(x='title_year', y='imdb_score', s='budget2', data=movie_samp)
+idx_min = movie_samp['imdb_score'].idxmin()
+idx_max = movie_samp['imdb_score'].idxmax()
+
+# annotating
+for idx, offset in zip([idx_min, idx_max], [.5, -.5]):
+    year = movie_samp.loc[idx, 'title_year']
+    score = movie_samp.loc[idx, 'imdb_score']
+    title = movie_samp.loc[idx, 'movie_title']
+    ax.annotate(xy = (year, score), # data locaition 
+                xytext=(year+1, score + offset), # comment string locaition 
+                s = title + ' ({})'.format(score),
+                ha = 'center',
+                size=16,
+                arrowprops= dict(arrowstyle='fancy'))
+    
+ax.set_title('IMDB Score by Year', size=25)
+ax.grid(True)
+fig
+
+# pandas plot() method is kind of the wrapper of matplotlib
+
+# plotting one var, two var
+df = pd.DataFrame(index=['Atiya', 'Abbas', 'Cornelia', 'Stephanie', 'Monte'],
+                  data={'Apples':[20, 10, 40, 20, 50],
+                        'Oranges':[35, 40, 25, 19, 33]})
+color = ['.2', '.7']
+df.plot(kind='bar', color=color, figsize=(16, 4))
+df.plot(kind='kde', color=color, figsize=(16, 4))
+
+fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(16, 4))
+fig.suptitle('Two Varialbe Plots', size=20, y=1.02)
+df.plot(kind='line', color=color, ax=ax1, title='Line Plot')
+df.plot(x='Apples', y='Oranges', kind='scatter', color=color, ax=ax2, title='Scatterplot')
+df.plot(kind='bar', color=color, ax=ax3, title='Bar plot')
+
+
+fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(16, 4))
+fig.suptitle('One Variable Plots', size=20, y=1.02)
+df.plot(kind='kde', color = color, ax=ax1, title='KDE plot')
+df.plot(kind='box', ax=ax2, title='Boxplot')
+df.plot(kind='hist', color=color, ax=ax3, title='Histogram')
+
+
+
+
+
+
+
+
+
+
+
+
+>>>>>>> 348d3582eaecc0febd3715c8583b0e6166b072ee
 
 
 
