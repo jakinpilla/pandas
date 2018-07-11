@@ -409,17 +409,56 @@ med_budget.loc[2010:2014].mean()
 med_budget_roll = med_budget.rolling(5, min_periods=1).mean()
 med_budget_roll.tail()
 
+movie = pd.read_csv('./data/movie.csv')
+cols = ['budget', 'title_year', 'imdb_score', 'movie_title']
+m = movie[cols].dropna()
+m['budget2'] = m['budget']/ 1e6
+np.random.seed(0)
+movie_samp = m.query('title_year >= 2000').sample(100)
+fig, ax = plt.subplots(figsize=(14, 6))
+ax.scatter(x='title_year', y='imdb_score', s='budget2', data=movie_samp)
+ax.scatter(x='title_year', y='imdb_score', s='budget2', data=movie_samp)
+idx_min = movie_samp['imdb_score'].idxmin()
+idx_max = movie_samp['imdb_score'].idxmax()
+
+# annotating
+for idx, offset in zip([idx_min, idx_max], [.5, -.5]):
+    year = movie_samp.loc[idx, 'title_year']
+    score = movie_samp.loc[idx, 'imdb_score']
+    title = movie_samp.loc[idx, 'movie_title']
+    ax.annotate(xy = (year, score), # data locaition 
+                xytext=(year+1, score + offset), # comment string locaition 
+                s = title + ' ({})'.format(score),
+                ha = 'center',
+                size=16,
+                arrowprops= dict(arrowstyle='fancy'))
+    
+ax.set_title('IMDB Score by Year', size=25)
+ax.grid(True)
+fig
+
+# pandas plot() method is kind of the wrapper of matplotlib
+
+# plotting one var, two var
+df = pd.DataFrame(index=['Atiya', 'Abbas', 'Cornelia', 'Stephanie', 'Monte'],
+                  data={'Apples':[20, 10, 40, 20, 50],
+                        'Oranges':[35, 40, 25, 19, 33]})
+color = ['.2', '.7']
+df.plot(kind='bar', color=color, figsize=(16, 4))
+df.plot(kind='kde', color=color, figsize=(16, 4))
+
+fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(16, 4))
+fig.suptitle('Two Varialbe Plots', size=20, y=1.02)
+df.plot(kind='line', color=color, ax=ax1, title='Line Plot')
+df.plot(x='Apples', y='Oranges', kind='scatter', color=color, ax=ax2, title='Scatterplot')
+df.plot(kind='bar', color=color, ax=ax3, title='Bar plot')
 
 
-
-
-
-
-
-
-
-
-
+fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(16, 4))
+fig.suptitle('One Variable Plots', size=20, y=1.02)
+df.plot(kind='kde', color = color, ax=ax1, title='KDE plot')
+df.plot(kind='box', ax=ax2, title='Boxplot')
+df.plot(kind='hist', color=color, ax=ax3, title='Histogram')
 
 
 
