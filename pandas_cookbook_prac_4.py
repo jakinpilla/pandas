@@ -164,7 +164,7 @@ crime['REPORTED_DATE'].dt.year.value_counts().sort_index()\
 weekday = crime['REPORTED_DATE'].dt.weekday_name
 year = crime['REPORTED_DATE'].dt.year
 
-crime.groupb(weekday)
+crime.groupby(weekday)
 crime.groupby(year)
 crime.groupby([year, weekday]) # no error 
 crime.groupby([year, weekday]).size() # error
@@ -370,7 +370,9 @@ for x, y, v, in  zip(years_5, ct_norm_5, ct_5):
 ax.legend()
 fig
 
-
+top10 = movie.sort_values('budget', ascending=False)\
+.groupby('title_year')['budget']\
+.apply(lambda x : x.iloc[:10].median() / 1e6)
 
 
 
