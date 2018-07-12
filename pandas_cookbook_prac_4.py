@@ -11,8 +11,14 @@ chdir(wd)
 getcwd()
 
 import numpy as np
-import pandas as pd
 import datetime
+import matplotlib.pyplot as plt
+#m pandas option setting to see more columns 
+import pandas as pd
+pd.set_option('display.max_rows', 500)
+pd.set_option('display.max_columns', 500)
+pd.set_option('display.width', 1000)
+
 
 date = datetime.date(year=2013, month=6, day=7)
 time = datetime.time(hour=12, minute=30, second=19, microsecond=463198)
@@ -247,7 +253,7 @@ goal.head()
 
 goal.info()
 all_data.info()
-all_data['Total'] = all_data['Total'].astype(int32)
+all_data['Total'] = all_data['Total'].astype('int32')
 all_data.info()
 
 pd.merge_asof(goal, all_data, left_on = 'Total_Goal', 
@@ -276,7 +282,6 @@ goal_period['Total_Goal'] = goal_period['Total'].mul(.8).astype(int)
 #              suffixes = ('_Current', '_Last')).head()
 # error :: incompatible merge keys [1] int32 and int64, must be the same type
 
-import matplotlib.pyplot as plt
 x = [-3, 5, 7]
 y = [10, 2, 5]
 plt.figure(figsize=(15, 3))
@@ -550,6 +555,191 @@ plt.setp(ax.get_xticklabels(), y=.1)
 plt.setp(ax.get_xticklines(), visible=False)
 ax.set_xlabel('')
 ax.set_title('Flight Time vs Distance with Outliers')
+
+# meetup data
+meetup = pd.read_csv('./data/meetup_groups.csv', parse_dates=['join_date'],
+                     index_col='join_date')
+meetup.head()
+
+group_count = meetup.groupby([pd.Grouper(freq='W'), 'group']).size()
+group_count.head()
+gc2 = group_count.unstack('group', fill_value=0)
+gc2.tail()
+group_total = gc2.cumsum()
+group_total.tail()
+row_total = group_total.sum(axis='columns')
+group_cum_pct = group_total.div(row_total, axis='index')
+group_cum_pct.tail()
+
+ax = group_cum_pct.plot(kind='area', figsize=(18, 4), cmap='Greys', 
+                        xlim=('2013-6', None), 
+                        ylim=(0, 1), legend=False)
+
+ax.figure.suptitle('Houston Meetup Groups', size=25)
+ax.set_xlabel('')
+ax.yaxis.tick_right()
+plot_kwargs = dict(xycoords='axes fraction',  size=15)
+ax.annotate(xy=(.1, .7), s='R users', color = 'w', **plot_kwargs)
+ax.annotate(xy=(.25, .16), s='Data Visualization', color = 'k', **plot_kwargs)
+ax.annotate(xy=(.5, .55), s='Energy Data Science', color = 'k', **plot_kwargs)
+ax.annotate(xy=(.83, .07), s='Data Science', color = 'k', **plot_kwargs)
+ax.annotate(xy=(.86, .78), s='Machine Learning', color = 'w', **plot_kwargs)
+
+pie_data = group_cum_pct.asfreq('3MS', method='bfill').tail(6).to_period('M').T
+pie_data
+
+from matplotlib.cm import Greys
+greys = Greys(np.arange(50, 250, 40))
+# np.arange(50,250,40)
+# greys.shape
+ax_array = pie_data.plot(kind='pie', subplots=True, layout=(2, 3), labels=None,
+                         autopct='%1.0f%%', pctdistance=1.22, colors=greys)
+
+ax1 = ax_array[0,0]
+ax1.figure.legend(ax1.patches, pie_data.index, ncol=3)
+for ax in ax_array.flatten():
+    ax.xaxis.label.set_visible(True)
+    ax.set_xlabel(ax.get_ylabel())
+    ax.set_ylabel('')
+ax1.figure.subplots_adjust(hspace=.3)
+
+employee = pd.read_csv('./data/employee.csv', parse_dates=['HIRE_DATE', 'JOB_DATE'])
+employee.head()
+
+import seaborn as sns
+sns.countplot(y= 'DEPARTMENT', data=employee)
+employee['DEPARTMENT'].value_counts().plot('barh')
+
+ax = sns.barplot(x='RACE', y='BASE_SALARY', data=employee)
+ax.figure.set_size_inches(16, 4)
+
+avg_sal = employee.groupby('RACE', sort=False)['BASE_SALARY'].mean()
+ax = avg_sal.plot(kind='bar', rot=0, figsize=(16,4), width=.8)
+ax.set_xlim(-.5, 5.5)
+ax.setylabel('Mean Salary')
+
+ax=sns.barplot(x='RACE', y='BASE_SALARY', hue='GENDER', data=employee, palette='Greys')
+ax.figure.set_size_inches(16, 4)
+
+employee.groupby(['RACE', 'GENDER'], sort=False)['BASE_SALARY'].mean().unstack('GENDER')\
+.plot(kind='bar', figsize=(16,4), rot=0, width=.8, cmap='Greys')
+
+sns.boxplot(x='GENDER', y='BASE_SALARY', data=employee, hue='RACE', palette='Greys')
+ax.figure.set_size_inches(16, 4)
+
+fig, ax_array = plt.subplots(1, 2, figsize=(14,4), sharey=True)
+for g, ax in zip(['Female', 'Male'], ax_array):
+    employee.query('GENDER==@g')\
+    .boxplot(by='RACE', column='BASE_SALARY', 
+             ax=ax, rot=20)
+    ax.set_title(g + 'Salary')
+    ax.set_xlabel('')
+fig.suptitle('')
+
+ax = employee.boxplot(by=['GENDER', 'RACE'], column='BASE_SALARY', figsize=(16, 4), 
+                      rot=15)
+ax.figure.suptitle('')
+
+employee = pd.read_csv('./data/employee.csv')
+employee.head()
+employee = pd.read_csv('./data/employee.csv', parse_dates = ['HIRE_DATE', 'JOB_DATE'])
+employee.head()
+employee.dtypes
+days_hired = pd.to_datetime('12-1-2016') - employee['HIRE_DATE']
+one_year = pd.Timedelta(1, unit='Y')
+one_year
+employee['YEARS_EXPERIENCE'] = days_hired/one_year
+employee[['HIRE_DATE', 'YEARS_EXPERIENCE']].head()
+ax = sns.regplot(x = 'YEARS_EXPERIENCE', y='BASE_SALARY', data=employee)
+ax.figure.set_size_inches(14,4)
+
+g = sns.lmplot('YEARS_EXPERIENCE', 'BASE_SALARY', hue='GENDER', palette='Greys',
+               scatter_kws={'s' : 10}, data=employee)
+g.fig.set_size_inches(14,4)
+type(g)
+
+grid = sns.lmplot(x = 'YEARS_EXPERIENCE', y = 'BASE_SALARY', hue='GENDER', 
+                  col='RACE', col_wrap=3, 
+                  palette='Greys', sharex=False,
+                  line_kws = {'linewidth' : 5}, data=employee)
+grid.set(ylim = (20000, 120000))
+
+deps = employee['DEPARTMENT'].value_counts().index[:2]
+races = employee['RACE'].value_counts().index[:3]
+is_dep = employee['DEPARTMENT'].isin(deps)
+is_race = employee['RACE'].isin(races)
+emp2 = employee[is_dep & is_race].copy()
+emp2['DEPARTMENT'] = emp2['DEPARTMENT'].str.extract('(HPD|HFD)', expand=True)
+emp2.head()
+emp2.shape
+emp2['DEPARTMENT'].value_counts()
+emp2['RACE'].value_counts()
+
+
+sns.factorplot(x = 'YEARS_EXPERIENCE', y='GENDER', col='RACE', row='DEPARTMENT',
+               size=3, aspect=2, data=emp2, kind='violin')
+
+diamonds = pd.read_csv('./data/diamonds.csv')
+diamonds.head()
+diamonds['cut'].unique()
+cut_cats = ['Fair', 'Good', 'Very Good', 'Premium', 'Ideal']
+diamonds['color'].unique()
+color_cats = ['J', 'I', 'H', 'G', 'F', 'E', 'D']
+diamonds['clarity'].unique()
+clarity_cats = ['I1', 'SI2', 'SI1', 'VS2', 'VS1', 'VVS2', 'VVS1', 'IF']
+diamonds['cut'] = pd.Categorical(diamonds['cut'], categories=cut_cats, ordered=True)
+diamonds['color'] = pd.Categorical(diamonds['color'], categories=color_cats, ordered=True)
+diamonds['clarity'] = pd.Categorical(diamonds['clarity'], categories=clarity_cats, ordered=True)
+
+import seaborn as sns
+fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(14,4))
+sns.barplot(x='color', y='price', data=diamonds, ax=ax1)
+sns.barplot(x='cut', y='price', data=diamonds, ax=ax2)
+sns.barplot(x='clarity', y='price', data=diamonds, ax=ax3)
+fig.suptitle('Price Decreasing with Increasing Quality?')
+
+sns.factorplot(x='color', y='price', col='clarity', col_wrap=4, 
+               data=diamonds, kind='bar')
+
+fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(14, 4))
+sns.barplot(x='color', y='carat', data=diamonds, ax=ax1)
+sns.barplot(x='cut', y='carat', data=diamonds, ax=ax2)
+sns.barplot(x='clarity', y='carat', data=diamonds, ax=ax3)
+fig.suptitle('Diamond size decrease with quality')
+
+diamonds['carat_category'] = pd.qcut(diamonds.carat, 5)
+from matplotlib.cm import Greys
+greys = Greys(np.arange(50,250,40))
+g = sns.factorplot(x='clarity', y='price', data=diamonds, hue='carat_category', 
+                   col='color', col_wrap=4, kind='point', palette=greys)
+g.fig.suptitle('Diamond price by size, color and clarity', y=1.02, size=20)
+
+g =sns.PairGrid(diamonds, size=5, 
+                x_vars=['color', 'cut', 'clarity'],
+                y_vars=['price'])
+g.map(sns.barplot)
+g.fig.suptitle('Replication with PairGrid', y=1.02)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
