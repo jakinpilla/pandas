@@ -433,7 +433,7 @@ movie2.sort_values('imdb_score', ascending = False).head(100)\
 # pip install pandas_datareader
 # This is due to the fact that is_list_like has been moved from pandas.core.common 
 # to pandas.api.types in Pandas 0.23.0.
-
+from pandas_datareader import data
 import pandas as pd
 pd.core.common.is_list_like = pd.api.types.is_list_like
 
@@ -470,7 +470,6 @@ msft_trailing_stop = set_trailing_loss('msft', '2017-6-1', '2018-6-1', .85)
 msft_trailing_stop.head()
 
 
-<<<<<<< HEAD
 college = pd.read_csv('./data/college.csv', index_col='INSTNM')
 city = college['CITY']
 city.head()
@@ -713,8 +712,3 @@ plt.fill_between(x=criteria.index, y1=upper_10, y2=slb_close.values,
 
 
 
-
-
-
-=======
->>>>>>> 1cfe960611840167ef75644a61048ec12d43540b
