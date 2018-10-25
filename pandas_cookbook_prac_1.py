@@ -269,7 +269,7 @@ movie.select_dtypes(['object'])\
 
 college = pd.read_csv("./data/college.csv")
 # college + 5
-collge = pd.read_csv("./data/college.csv", index_col = "INSTNM")
+college = pd.read_csv("./data/college.csv", index_col = "INSTNM")
 college_ugds_ = college.filter(like = "UGDS_")
 college_ugds_.head()
 college_ugds_ + 0.00501
@@ -436,17 +436,18 @@ movie2.sort_values('imdb_score', ascending = False).head(100)\
 from pandas_datareader import data
 import pandas as pd
 pd.core.common.is_list_like = pd.api.types.is_list_like
-
+from pandas_datareader import data as pdr
 import fix_yahoo_finance as yf
 yf.pdr_override()
-import numpy as np
 import datetime
+
+data = pdr.get_data_yahoo("AMZN", start="2017-01-01", end="2017-09-12")
 
 #To get data:
 
 start = datetime.datetime(2017, 1, 1)
 end = datetime.datetime(2017, 12, 31)
-tsla = data.get_data_yahoo('tsla', start, end)
+tsla = pdr.get_data_yahoo('tsla', start, end)
 tsla.head(8)
 
 tsla_close = tsla['Close']
@@ -461,7 +462,7 @@ datetime.datetime.strptime('2017-6-1', "%Y-%m-%d")
 def set_trailing_loss(symbol, start_date, end_date, perc):
     start_date = datetime.datetime.strptime(start_date, '%Y-%m-%d')
     end_date = datetime.datetime.strptime(end_date, '%Y-%m-%d')
-    close = data.get_data_yahoo(symbol, start_date, end_date)['Close']
+    close = pdr.get_data_yahoo(symbol, start_date, end_date)['Close']
     
     return close.cummax() * perc
 
@@ -469,7 +470,10 @@ def set_trailing_loss(symbol, start_date, end_date, perc):
 msft_trailing_stop = set_trailing_loss('msft', '2017-6-1', '2018-6-1', .85)
 msft_trailing_stop.head()
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> 1483cb0bc8af957ecd50011e40255a47e8fbc61b
 college = pd.read_csv('./data/college.csv', index_col='INSTNM')
 city = college['CITY']
 city.head()
@@ -676,7 +680,6 @@ college[crit1 & crit2]
 # %timeit college.loc['Miami, FL']
 
 # predict Schlumberger stock value
-
 slb = pd.read_csv('./data/slb_stock.csv', index_col = 'Date', parse_dates = ['Date'])
 slb.head()
 slb_close = slb['Close']
@@ -712,3 +715,8 @@ plt.fill_between(x=criteria.index, y1=upper_10, y2=slb_close.values,
 
 
 
+<<<<<<< HEAD
+=======
+
+
+>>>>>>> 1483cb0bc8af957ecd50011e40255a47e8fbc61b
