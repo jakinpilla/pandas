@@ -5,6 +5,7 @@ Spyder Editor
 This is a temporary script file.
 """
 
+#%%
 from os import getcwd, chdir
 wd = getcwd()
 import pandas as pd
@@ -25,6 +26,7 @@ type(index)
 type(columns)
 type(data)
 
+#%%
 ## issubclass
 issubclass(pd.RangeIndex, pd.Index)
 
