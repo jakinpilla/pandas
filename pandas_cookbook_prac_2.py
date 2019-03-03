@@ -4,12 +4,21 @@ Created on Tue Jul  3 10:49:49 2018
 
 @author: dsc
 """
-
+#%%
 from os import getcwd, chdir
 getcwd()
-chdir("C:/Users/dsc/pandas")
+chdir("C:/Users/Daniel/pandas")
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
+import matplotlib as mpl
+
+# just prac for matplotlib...
+x = np.linspace(0, 20, 100)
+plt.plot(x, np.sin(x))
+plt.show() 
+
+#%%
 employee = pd.read_csv('data/employee.csv')
 
 employee.DEPARTMENT.value_counts().head()
@@ -29,10 +38,11 @@ top_5_depts = employee.DEPARTMENT.value_counts().index[:5]
 criteria = ~employee.DEPARTMENT.isin(top_5_depts)
 employee[criteria].head()
 
+#%%
 ## validate stock margin normality
-
 amzn = pd.read_csv('./data/amzn_stock.csv', index_col = 'Date', parse_dates=['Date'])
 amzn.head()
+amzn.info()
 
 amzn_daily_return = amzn.Close.pct_change()
 amzn_daily_return.head()
@@ -40,17 +50,17 @@ amzn_daily_return.head()
 amzn_daily_return= amzn_daily_return.dropna()
 amzn_daily_return.hist(bins=20)
 
+mean = amzn_daily_return.mean(); mean
+std = amzn_daily_return.std(); std
 
-mean = amzn_daily_return.mean()
-std = amzn_daily_return.std()
-
-abs_z_score = amzn_daily_return.sub(mean).abs().div(std)
+abs_z_score = amzn_daily_return.sub(mean).abs().div(std); abs_z_score
 
 abs_z_score.lt(1)
 
 pcts = [abs_z_score.lt(i).mean() for i in range(1, 4)]
 pcts
 
+#%%
 def test_return_normality(stock_data):
     close = stock_data['Close']
     daily_return = close.pct_change().dropna()
@@ -75,6 +85,7 @@ qs = "DEPARTMENT not in @top10_depts and GENDER == 'Female'"
 employee_filtered2 = employee.query(qs)
 employee_filtered2.head()
 
+#%%
 movie = pd.read_csv('./data/movie.csv', index_col = 'movie_title')
 fb_likes = movie['actor_1_facebook_likes'].dropna()
 fb_likes.head()
@@ -84,6 +95,7 @@ fb_likes.hist()
 criteria_high = fb_likes < 20000
 criteria_high.mean().round(2)
 
+#%%
 # selecting data with boolea and loc, iloc
 movie=pd.read_csv('./data/movie.csv', index_col = 'movie_title')
 c1 = movie['content_rating'] == 'G'
@@ -93,6 +105,7 @@ movie_loc = movie.loc[criteria]
 movie_loc.head()
 movie_loc.equals(movie[criteria])
 
+#%%
 # we cannot use boolean series in iloc, we need to use boolean ndarray
 movie_iloc = movie.iloc[criteria.values]
 movie_iloc.equals(movie_loc)
@@ -111,6 +124,7 @@ a[:5]
 len(a), len(criteria)
 movie.loc[[True, False, True], [True, False, False, True]]
 
+#%%
 # Index arranging
 college = pd.read_csv('./data/college.csv')
 columns = college.columns
@@ -128,19 +142,21 @@ c2 = columns[2:6] ; c2
 c1.union(c2)
 c1.symmetric_difference(c2)
 
+#%%
 # cartesian product
 s1 = pd.Series(index=list('aaab'), data=np.arange(4))
 s1
 s2 = pd.Series(index=list('cababb'), data = np.arange(6))
 s2
 s1+s2
-s1 = pd.Series(index=list('aaabb'), data=np.arange(5))
-s2 = pd.Series(index=list('aaabb'), data=np.arange(5))
+s1 = pd.Series(index=list('aaabb'), data=np.arange(5)); s1
+s2 = pd.Series(index=list('aaabb'), data=np.arange(5)); s2
 s1+s2
-s1 = pd.Series(index=list('aaabb'), data=np.arange(5))
-s2 = pd.Series(index=list('bbaaa'), data=np.arange(5))
+s1 = pd.Series(index=list('aaabb'), data=np.arange(5)); s1
+s2 = pd.Series(index=list('bbaaa'), data=np.arange(5)); s2
 s1+s2
 
+#%%
 # explode index
 employee = pd.read_csv('./data/employee.csv', index_col='RACE')
 employee.head()
@@ -165,6 +181,7 @@ len(salary1), len(salary2), len(salary_add), len(salary_add1)
 index_vc = salary1.index.value_counts(dropna = False)
 index_vc.pow(2).sum()
 
+#%%
 # fill_value()
 
 baseball_14 = pd.read_csv('./data/baseball14.csv', index_col ='playerID')
@@ -185,6 +202,7 @@ hits_total  = hits_14.add(hits_15, fill_value=0).add(hits_16, fill_value=0)
 hits_total.head()
 hits_total.hasnans
 
+#%%
 # if all elements are 'nan', adding Series's result is also 'nan' even though fill_values() method is used.
 s = pd.Series(index=['a', 'b', 'c', 'd'],
               data = [np.nan, 3, np.nan, 1])
@@ -200,6 +218,7 @@ df_15.head()
 (df_14 + df_15).head(10).style.highlight_null('yellow') # how can I see this result in spyder IDE...
 df_14.add(df_15, fill_value=0).head(10).style.highlight_null('yellow')
 
+#%%
 # extracting persons who recieve max salary in each department
 employee = pd.read_csv('./data/employee.csv')
 dept_sal =employee[['DEPARTMENT', 'BASE_SALARY']]
@@ -219,6 +238,7 @@ employee.head()
 len(employee)
 employee.query('BASE_SALARY > MAX_DEPT_SALARY')
 
+#%%
 np.random.seed(1234)
 random_salary = dept_sal.sample(n=10).set_index('DEPARTMENT')
 random_salary
@@ -233,6 +253,7 @@ college.dtypes
 college.MD_EARN_WNE_P10.iloc[0]
 college.GRAD_DEBT_MDN_SUPP.iloc[0]
 
+#%%
 college.MD_EARN_WNE_P10.sort_values(ascending=False).head()
 cols = ['MD_EARN_WNE_P10', 'GRAD_DEBT_MDN_SUPP']
 for col in cols:
@@ -256,7 +277,7 @@ college = pd.read_csv('./data/college.csv', index_col='INSTNM')
 college_ugds = college.filter(like='UGDS_').head()
 college_ugds.style.highlight_max(axis='columns')
 
-
+#%%
 college = pd.read_csv('./data/college.csv', index_col = 'INSTNM')
 cols = ['MD_EARN_WNE_P10', 'GRAD_DEBT_MDN_SUPP']
 for col in cols:
@@ -279,6 +300,7 @@ idxmax_cols= has_row_max2[has_row_max2].index
 idxmax_cols
 set(college_n.idxmax().unique()) == set(idxmax_cols)
 
+#%%
 #m most frequent max values
 college_ugds = college.filter(like='UGDS_')
 highest_percentage_race = college_ugds.idxmax(axis='columns')
@@ -306,6 +328,7 @@ agg_dict = {'CANCELLED' : ['sum', 'mean', 'size'],
             'AIR_TIME' : ['mean', 'var']}
 flights.groupby(group_cols).agg(agg_dict).head()
 
+#%%
 # remove multi-index after groupby()
 flights = pd.read_csv('./data/flights.csv')
 airline_info = flights.groupby(['AIRLINE', 'WEEKDAY'])\
@@ -337,6 +360,7 @@ max_deviation.__name__ = 'Max Deviation'
 college.groupby(['STABBR', 'RELAFFIL'])\
 ['UGDS', 'SATVRMID', 'SATMTMID'].agg([max_deviation, 'mean', 'std']).round(1).head()
 
+#%%
 # *arg, **kwargs / arbitrary argument list
 
 college = pd.read_csv('./data/college.csv')
@@ -356,6 +380,7 @@ college.groupby(['STABBR', 'RELAFFIL'])['UGDS'].agg(pct_between, 1000, 10000).he
 college.groupby(['STABBR', 'RELAFFIL'])['UGDS'].agg(pct_between, high=10000, low=1000).head(9)
 college.groupby(['STABBR', 'RELAFFIL'])['UGDS'].agg(pct_between, 1000, high=10000).head(9)
 
+#%%
 # *arg --> tuples / **kwargs --> dictionary
 
 def make_agg_func(func, name, *args, **kwargs):
@@ -368,6 +393,7 @@ my_agg1 = make_agg_func(pct_between, 'pct_1_3k', low=1000, high=3000)
 my_agg2 = make_agg_func(pct_between, 'pct_10_30k', 10000, 30000)
 college.groupby(['STABBR', 'RELAFFIL'])['UGDS'].agg(['mean', my_agg1, my_agg2]).head()
 
+#%%
 # groupby() objects
 college = pd.read_csv('./data/college.csv')
 grouped = college.groupby(['STABBR', 'RELAFFIL'])
@@ -386,6 +412,7 @@ for name, group in grouped:
 grouped.head(2).head(6)
 grouped.nth([1, -1]).head()
 
+#%%
 # ------------------
 college = pd.read_csv('./data/college.csv', index_col = 'INSTNM')
 grouped = college.groupby('STABBR')
