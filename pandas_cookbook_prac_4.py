@@ -19,6 +19,8 @@ pd.set_option('display.max_rows', 500)
 pd.set_option('display.max_columns', 500)
 pd.set_option('display.width', 1000)
 
+import os
+os.environ['QT_QPA_PLATFORM_PLUGIN_PATH'] = 'C:/Anaconda3/Library/plugins/platforms'
 
 date = datetime.date(year=2013, month=6, day=7)
 time = datetime.time(hour=12, minute=30, second=19, microsecond=463198)
@@ -86,7 +88,7 @@ td.round('min')
 td.components
 td.total_seconds()
 date_string_list=['Sep 30 1984']*10000
-pd.to_datetime(date_string_list, format='%b %d %Y')
+# pd.to_datetime(date_string_list, format='%b %d %Y')
 pd.to_datetime(date_string_list)
 
 crime = pd.read_hdf('./data/crime.h5', 'crime')

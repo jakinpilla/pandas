@@ -7,6 +7,7 @@ This is a temporary script file.
 
 #%%
 from os import getcwd, chdir
+
 wd = getcwd()
 import pandas as pd
 import numpy as np
@@ -40,7 +41,6 @@ issubclass(pd.RangeIndex, pd.Index)
 ## so only less memory is needed
 
 #%%
-
 movie.dtypes
 
 #%%
@@ -213,7 +213,6 @@ movie.insert(loc = profit_index,
              value = movie['gross'] - movie['budget'])
 
 ## del
-
 movie["actor_director_facebook_likes"] =\
 (movie["actor_1_facebook_likes"] +
  movie["actor_2_facebook_likes"] +
@@ -239,7 +238,6 @@ tuple2 = (1, 2, 3, 'a', 'b')
 tuple1 == tuple2
 
 ## selecting multiful columns with methods
-
 movie = pd.read_csv("./data/movie.csv", index_col = "movie_title")
 movie.get_dtype_counts()
 movie.select_dtypes(include = ['int64']).head()
@@ -753,15 +751,3 @@ plt.fill_between(x=criteria.index, y1=upper_10, y2=slb_close.values,
 
 
 # SQL where
-
-
-
-
-
-
-
-<<<<<<< HEAD
-=======
-
-
->>>>>>> 1483cb0bc8af957ecd50011e40255a47e8fbc61b
